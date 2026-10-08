@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/achievements/achievement.dart';
 import '../../core/achievements/achievement_engine.dart';
 import '../../core/achievements/game_facts.dart';
 import '../../core/animations/entrances.dart';
+import '../../core/gift_rooms/gift_room_engine.dart';
+import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/progress_state.dart';
 import '../../features/game/game_providers.dart';
+import '../../widgets/big_button.dart';
 import '../../widgets/counter_pill.dart';
 import '../../widgets/kid_screen.dart';
 import '../../widgets/motion.dart';
@@ -39,6 +43,15 @@ class AchievementsScreen extends ConsumerWidget {
         badges.where((AchievementProgress b) => b.earned).length;
     final ({int rows, int inRow, int starsShown}) wall =
         AchievementEngine.wallLayout(facts.designs, perRow: starsPerRow);
+
+    // Badges open the last box of every gift room — so the wall also shows
+    // the gift trail: how many boxes are opened, and how many are waiting.
+    final int openedGifts = GiftRoomEngine.openedCount(progress.openedGiftBoxes);
+    final bool giftWaiting = GiftRoomEngine.hasReadyGift(
+      stars: progress.stars,
+      badges: earnedCount,
+      openedBoxes: progress.openedGiftBoxes,
+    );
 
     return KidScreen(
       roomId: 'gallery',
@@ -84,6 +97,30 @@ class AchievementsScreen extends ConsumerWidget {
               rows: wall.rows,
               inRow: wall.inRow,
               perRow: starsPerRow,
+            ),
+          ),
+          const SizedBox(height: 12),
+          EntranceItem(
+            index: 4,
+            child: Row(
+              children: <Widget>[
+                CounterPill(
+                  icon: Icons.card_giftcard_rounded,
+                  value: openedGifts,
+                  color: AppColors.pink,
+                  size: 42,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: BigButton(
+                    icon: Icons.redeem_rounded,
+                    label: 'Rooms',
+                    color: giftWaiting ? AppColors.pink : AppColors.lavender,
+                    height: 78,
+                    onPressed: () => context.go(AppRoutes.gifts),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

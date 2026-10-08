@@ -9,5 +9,9 @@ abstract final class AppRoutes {
   static const String gallery = '/gallery';
   static const String rewards = '/rewards';
   static const String stars = '/stars';
+  static const String gifts = '/gifts';
   static const String settings = '/settings';
+
+  /// One gift room, e.g. `/gifts/blush`.
+  static String giftRoomPath(String roomId) => '/gifts/$roomId';
 }

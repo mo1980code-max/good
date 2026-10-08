@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/progress_state.dart';
 import '../models/settings_model.dart';
+import 'design_store.dart';
 
 /// The one and only place that touches the disk.
 ///
@@ -13,7 +14,9 @@ import '../models/settings_model.dart';
 /// * Progress and settings are stored under **separate keys**, so resetting
 ///   progress keeps the child's sound/music preferences.
 /// * All writes go through a queue, so two quick saves can never interleave.
-class LocalStorageService {
+/// * **[DesignImageIndex]** it also keeps the `designId -> PNG name` map that
+///   makes a design save survive the screen that started it.
+class LocalStorageService implements DesignImageIndex {
   LocalStorageService._();
 
   static final LocalStorageService instance = LocalStorageService._();
@@ -21,7 +24,9 @@ class LocalStorageService {
   /// Bump when the save format changes, then add a migration in [_migrate].
   /// v2 added: achievements, spa-step / box counters (all optional on read)
   /// and the durable design-image map.
-  static const int schemaVersion = 2;
+  /// v3 added: the set of already-opened gift boxes. Older saves keep working
+  /// untouched — every migration here is additive, never a rewrite.
+  static const int schemaVersion = 3;
 
   static const String _kSchema = 'sparkle.schema';
   static const String _kProgress = 'sparkle.progress';
@@ -39,6 +44,17 @@ class LocalStorageService {
   Future<void> _writeQueue = Future<void>.value();
 
   bool get isReady => _prefs != null;
+
+  /// Test seam: forget the cached instance and the write queue, so a test can
+  /// simulate "the app was restarted" without spawning a new process.
+  @visibleForTesting
+  void resetForTests() {
+    _prefs = null;
+    _writeQueue = Future<void>.value();
+  }
+
+  /// Test seam: resolves once every queued write has landed.
+  Future<void> flushWrites() => _writeQueue;
 
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -108,6 +124,7 @@ class LocalStorageService {
 
   // --- Design images (durable, provider-free) ------------------------------
 
+  @override
   Map<String, String> loadDesignImages() {
     final String? raw = _prefs?.getString(_kDesignImages);
     if (raw == null || raw.isEmpty) return <String, String>{};
@@ -131,6 +148,7 @@ class LocalStorageService {
 
   /// Remembers which PNG belongs to which design. This is the write that makes
   /// a save survive the screen that started it.
+  @override
   Future<void> setDesignImage(String designId, String fileName) {
     return _enqueue(() async {
       final Map<String, String> images = loadDesignImages();
@@ -139,6 +157,7 @@ class LocalStorageService {
     });
   }
 
+  @override
   Future<void> removeDesignImage(String designId) {
     return _enqueue(() async {
       final Map<String, String> images = loadDesignImages();
@@ -175,9 +194,11 @@ class LocalStorageService {
 
     final int from = prefs.getInt(_kSchema) ?? 0;
 
-    // v0/v1 -> v2: nothing to move. Every model parses missing fields into
-    // safe defaults (a v1 save simply has no achievements yet, and the album
-    // merges whatever design images it finds), so this is only a stamp.
+    // v0/v1 -> v2 -> v3: nothing to move. Every model parses missing fields
+    // into safe defaults (a v1 save simply has no achievements and no gift
+    // boxes yet, and the album merges whatever design images it finds), so the
+    // old payload is **never rewritten** — that is what makes the upgrade
+    // lossless: the bytes the child earned are still there, verbatim.
     if (from < schemaVersion) {
       await prefs.setInt(_kSchema, schemaVersion);
     }

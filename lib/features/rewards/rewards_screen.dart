@@ -97,6 +97,16 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
             onPressed: () => context.go(AppRoutes.stars),
           ),
           const SizedBox(height: 10),
+          // The gift rooms are the fun half of rewards: free boxes, pastel
+          // doors, no timers and no currency needed to walk in.
+          BigButton(
+            icon: Icons.card_giftcard_rounded,
+            label: 'Rooms',
+            color: AppColors.pink,
+            height: 78,
+            onPressed: () => context.go(AppRoutes.gifts),
+          ),
+          const SizedBox(height: 10),
           BigButton(
             icon: Icons.home_rounded,
             height: 70,

@@ -17,6 +17,7 @@ class OptionTile extends StatefulWidget {
     this.accent = AppColors.lavender,
     this.locked = false,
     this.price = 0,
+    this.lockedIcon,
     this.semanticLabel,
     super.key,
   });
@@ -28,6 +29,11 @@ class OptionTile extends StatefulWidget {
   final Color accent;
   final bool locked;
   final int price;
+
+  /// Shown instead of the padlock. Gift-only items use a little gift, so the
+  /// child reads "a present is waiting", not "you must pay".
+  final IconData? lockedIcon;
+
   final String? semanticLabel;
 
   @override
@@ -111,8 +117,8 @@ class _OptionTileState extends State<OptionTile> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            const Icon(
-                              Icons.lock_rounded,
+                            Icon(
+                              widget.lockedIcon ?? Icons.lock_rounded,
                               color: AppColors.lavender,
                               size: 30,
                             ),

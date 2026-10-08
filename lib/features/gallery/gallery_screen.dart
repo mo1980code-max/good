@@ -24,11 +24,36 @@ import '../../widgets/motion.dart';
 
 /// The album (or "star wall"): every finished design, newest first.
 /// Deleting is possible — but only for a grown-up (long-press + gate).
-class GalleryScreen extends ConsumerWidget {
+class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GalleryScreen> createState() => _GalleryScreenState();
+}
+
+class _GalleryScreenState extends ConsumerState<GalleryScreen> {
+  /// How many cards may re-capture a missing picture in one visit. The rest
+  /// are left alone on purpose: a phone should never be asked to render a
+  /// whole album at once. Their designs are still there — only the picture is
+  /// pending, and the next visit repairs a few more.
+  static const int repairBudget = 6;
+
+  @override
+  void initState() {
+    super.initState();
+    // Once per session, after the first frame: drop `.tmp_*` leftovers from a
+    // save that the app closing cut short, and give a picture back to every
+    // design whose PNG really exists on disk (even if the index write was the
+    // thing that got lost).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref.read(progressControllerProvider.notifier).reconcileAlbumImages(),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final List<GalleryItem> gallery =
         ref.watch(progressControllerProvider.select((p) => p.gallery));
 
@@ -54,11 +79,11 @@ class GalleryScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 return EntranceItem(
                   index: index,
-                  // Only the first cards may repair in one visit, so the
-                  // device is never asked to re-render a whole album.
                   child: _DesignCard(
                     item: gallery[index],
-                    allowRepair: index < 2,
+                    allowRepair: index < repairBudget,
+                    // Staggered, so six captures never start in one frame.
+                    repairDelayMs: 320 + (index % repairBudget) * 220,
                   ),
                 );
               },
@@ -68,7 +93,11 @@ class GalleryScreen extends ConsumerWidget {
 }
 
 class _DesignCard extends ConsumerStatefulWidget {
-  const _DesignCard({required this.item, this.allowRepair = false});
+  const _DesignCard({
+    required this.item,
+    this.allowRepair = false,
+    this.repairDelayMs = 350,
+  });
 
   final GalleryItem item;
 
@@ -76,6 +105,9 @@ class _DesignCard extends ConsumerStatefulWidget {
   /// the reveal screen, or the app was closed mid-save) is re-captured here
   /// from its recipe — the album heals itself, nothing is ever lost.
   final bool allowRepair;
+
+  /// Small head start per card so a visit cannot fire six captures at once.
+  final int repairDelayMs;
 
   @override
   ConsumerState<_DesignCard> createState() => _DesignCardState();
@@ -136,7 +168,9 @@ class _DesignCardState extends ConsumerState<_DesignCard> {
     final DesignSaver saver = ref.read(designSaverProvider);
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(
+        Duration(milliseconds: widget.repairDelayMs),
+      );
       final DesignSaveResult result = await saver.save(
         designId: item.id,
         capture: () => _repairShot.capture(pixelRatio: 2.5),

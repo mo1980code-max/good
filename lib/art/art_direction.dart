@@ -173,6 +173,32 @@ abstract final class ArtDirection {
       light: Color(0xFFF4F1FA),
       mood: 'quiet-study',
     ),
+    // --- Gift rooms (Phase 2.5): one pastel wash per room -----------------
+    'gifts': RoomArtSpec(
+      id: 'gifts',
+      light: Color(0xFFFFF1F8),
+      mood: 'present-corridor',
+    ),
+    'gift_blush': RoomArtSpec(
+      id: 'gift_blush',
+      light: Color(0xFFFFE3F1),
+      mood: 'candy-pink-room',
+    ),
+    'gift_mint': RoomArtSpec(
+      id: 'gift_mint',
+      light: Color(0xFFD9FBF6),
+      mood: 'fresh-mint-room',
+    ),
+    'gift_sky': RoomArtSpec(
+      id: 'gift_sky',
+      light: Color(0xFFDFF1FF),
+      mood: 'cloud-sky-room',
+    ),
+    'gift_sunny': RoomArtSpec(
+      id: 'gift_sunny',
+      light: Color(0xFFFFF3D6),
+      mood: 'sunny-honey-room',
+    ),
   };
 
   static RoomArtSpec room(String id) => rooms[id] ?? rooms.values.first;

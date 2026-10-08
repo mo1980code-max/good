@@ -122,7 +122,7 @@ abstract final class AchievementCatalog {
     Achievement(
       id: 'rainbow_hands',
       title: 'Rainbow Hands',
-      hint: 'Try every polish color',
+      hint: 'Try 12 different polish colors',
       icon: Icons.gradient_rounded,
       metric: AchievementMetric.distinctColors,
       target: 12,

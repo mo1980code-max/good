@@ -30,8 +30,8 @@ final Provider<GalleryRepository> galleryRepositoryProvider =
 /// write still lands after the reveal screen (or the whole scope) is gone.
 final Provider<DesignSaver> designSaverProvider = Provider<DesignSaver>(
   (ref) => DesignSaver(
-    repository: ref.read(galleryRepositoryProvider),
-    storage: LocalStorageService.instance,
+    files: ref.read(galleryRepositoryProvider),
+    index: LocalStorageService.instance,
   ),
 );
 

@@ -30,12 +30,20 @@ class NailColorOption {
     required this.label,
     required this.color,
     this.price = 0,
+    this.giftRoom,
   });
 
   final String id;
   final String label;
   final Color color;
   final int price;
+
+  /// Set when this item is **not for sale**: it is a gift-room prize, so it can
+  /// only ever be obtained from a surprise box. A gift item is never bought
+  /// with coins and never carries a price tag in the studio.
+  final String? giftRoom;
+
+  bool get giftOnly => giftRoom != null;
 }
 
 /// A polish pattern (glitter / stripes / ...).
@@ -60,18 +68,26 @@ class DecorItem {
     required this.label,
     required this.asset,
     this.price = 0,
+    this.giftRoom,
   });
 
   final String id;
   final String label;
   final String asset;
   final int price;
+
+  /// See [NailColorOption.giftRoom] — gift-only items come from gift boxes.
+  final String? giftRoom;
+
+  bool get giftOnly => giftRoom != null;
 }
 
 /// All paintable content. Kept as plain const data so it is trivial to extend
 /// (and to move into JSON later if the catalog grows).
 abstract final class NailCatalog {
-  // 3 shapes x 12 colors x 6 patterns x 12 stickers x 8 rings = 20,736 designs.
+  // 3 shapes x 16 colors x 6 patterns x 12 stickers x 12 rings = 41,472 designs.
+  // Four colours and four ring charms are gift-only (Phase 2.5): they show up
+  // in the studio right away, but a gift box is what actually unlocks them.
 
   static const List<NailColorOption> colors = <NailColorOption>[
     NailColorOption(id: 'pink', label: 'Pink', color: Color(0xFFFF5DA2)),
@@ -105,6 +121,31 @@ abstract final class NailCatalog {
       label: 'Aqua',
       color: Color(0xFF7FE1E1),
       price: 60,
+    ),
+    // --- Gift-only colours (Phase 2.5) — never sold, only unwrapped -------
+    NailColorOption(
+      id: 'rose_glow',
+      label: 'Rose Glow',
+      color: Color(0xFFFF9FCE),
+      giftRoom: 'blush',
+    ),
+    NailColorOption(
+      id: 'mint_dream',
+      label: 'Mint Dream',
+      color: Color(0xFF8FEADD),
+      giftRoom: 'mint',
+    ),
+    NailColorOption(
+      id: 'sky_wish',
+      label: 'Sky Wish',
+      color: Color(0xFFA9DCFF),
+      giftRoom: 'sky',
+    ),
+    NailColorOption(
+      id: 'sunny_honey',
+      label: 'Sunny Honey',
+      color: Color(0xFFFFC46B),
+      giftRoom: 'sunny',
     ),
   ];
 
@@ -146,6 +187,31 @@ abstract final class NailCatalog {
     DecorItem(id: 'ring_6', label: 'Ring 6', asset: Assets.ring6, price: 40),
     DecorItem(id: 'ring_7', label: 'Ring 7', asset: Assets.ring7, price: 50),
     DecorItem(id: 'ring_8', label: 'Ring 8', asset: Assets.ring8, price: 60),
+    // --- Gift-only charms (Phase 2.5) — unwrapped, never bought ------------
+    DecorItem(
+      id: 'charm_heart',
+      label: 'Heart Charm',
+      asset: Assets.stickerHeart,
+      giftRoom: 'blush',
+    ),
+    DecorItem(
+      id: 'charm_star',
+      label: 'Star Charm',
+      asset: Assets.stickerStar,
+      giftRoom: 'mint',
+    ),
+    DecorItem(
+      id: 'charm_gem',
+      label: 'Gem Charm',
+      asset: Assets.stickerGem,
+      giftRoom: 'sky',
+    ),
+    DecorItem(
+      id: 'charm_butterfly',
+      label: 'Butterfly Charm',
+      asset: Assets.stickerButterfly,
+      giftRoom: 'sunny',
+    ),
   ];
 
   // --- Safe lookups (used by the gallery, which may hold old save data) ---

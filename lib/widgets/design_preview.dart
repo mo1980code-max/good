@@ -35,6 +35,11 @@ IconData ringIcon(String id) {
     'ring_6' => Icons.change_history_rounded,
     'ring_7' => Icons.auto_awesome_rounded,
     'ring_8' => Icons.filter_vintage,
+    // Gift-room charms keep their own personality.
+    'charm_heart' => Icons.favorite_rounded,
+    'charm_star' => Icons.star_rounded,
+    'charm_gem' => Icons.hexagon_rounded,
+    'charm_butterfly' => Icons.filter_vintage,
     _ => Icons.circle_outlined,
   };
 }

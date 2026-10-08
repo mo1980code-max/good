@@ -6,6 +6,8 @@ import '../animations/screen_transitions.dart';
 import '../../features/achievements/achievements_screen.dart';
 import '../../features/characters/character_select_screen.dart';
 import '../../features/gallery/gallery_screen.dart';
+import '../../features/gift_rooms/gift_room_screen.dart';
+import '../../features/gift_rooms/gift_rooms_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/reveal/reveal_screen.dart';
 import '../../features/rewards/rewards_screen.dart';
@@ -58,6 +60,19 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.stars,
         pageBuilder: (_, __) => softPage(const AchievementsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.gifts,
+        pageBuilder: (_, __) => softPage(const GiftRoomsScreen()),
+        routes: <RouteBase>[
+          GoRoute(
+            path: ':roomId',
+            pageBuilder: (BuildContext context, GoRouterState state) =>
+                softPage(
+              GiftRoomScreen(roomId: state.pathParameters['roomId'] ?? ''),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.settings,

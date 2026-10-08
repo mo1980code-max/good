@@ -219,6 +219,43 @@ bool _ensureUnlocked(
   return false;
 }
 
+/// Gift-only items are **never bought**: they come from a gift box.
+/// Tapping a locked one shows a textless gift hint — no price, no penalty,
+/// and the tile stays exactly where it is.
+bool _giftReady(WidgetRef ref, String id) =>
+    ref.read(progressControllerProvider).isUnlocked(id);
+
+void _showGiftHint(BuildContext context) {
+  SoundHelper.pop();
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      content: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(
+            Icons.card_giftcard_rounded,
+            size: 64,
+            color: AppColors.pink,
+          ),
+          SizedBox(height: 6),
+          Icon(
+            Icons.auto_awesome_rounded,
+            size: 40,
+            color: AppColors.yellow,
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Icon(Icons.star_rounded, color: AppColors.yellow),
+        ),
+      ],
+    ),
+  );
+}
+
 // --- Step 1: shape ----------------------------------------------------------
 
 class _ShapeRow extends StatelessWidget {
@@ -278,10 +315,19 @@ class _ColorRow extends ConsumerWidget {
             size: 78,
             accent: option.color,
             selected: round.colorId == option.id,
-            locked: !progress.canUse(option.id, price: option.price),
-            price: option.price,
+            locked: !progress.canUse(
+              option.id,
+              price: option.price,
+              giftOnly: option.giftOnly,
+            ),
+            price: option.giftOnly ? 0 : option.price,
+            lockedIcon: option.giftOnly ? Icons.card_giftcard_rounded : null,
             semanticLabel: option.label,
             onTap: () {
+              if (option.giftOnly && !_giftReady(ref, option.id)) {
+                _showGiftHint(context);
+                return;
+              }
               if (!_ensureUnlocked(context, ref, option.id, option.price)) {
                 return;
               }
@@ -420,10 +466,19 @@ class _RingRow extends ConsumerWidget {
           OptionTile(
             size: 84,
             selected: round.ringId == item.id,
-            locked: !progress.canUse(item.id, price: item.price),
-            price: item.price,
+            locked: !progress.canUse(
+              item.id,
+              price: item.price,
+              giftOnly: item.giftOnly,
+            ),
+            price: item.giftOnly ? 0 : item.price,
+            lockedIcon: item.giftOnly ? Icons.card_giftcard_rounded : null,
             semanticLabel: item.label,
             onTap: () {
+              if (item.giftOnly && !_giftReady(ref, item.id)) {
+                _showGiftHint(context);
+                return;
+              }
               if (!_ensureUnlocked(context, ref, item.id, item.price)) return;
               controller.selectRing(item.id);
               SoundHelper.tap();

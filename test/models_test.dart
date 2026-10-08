@@ -45,14 +45,14 @@ void main() {
       expect(NailCatalog.ringById('nope').id, NailCatalog.rings.first.id);
     });
 
-    test('catalog sizes match the GDD (20,736 possible designs)', () {
+    test('catalog sizes match the GDD (41,472 possible designs)', () {
       final int combinations = NailCatalog.colors.length *
           NailCatalog.patterns.length *
           NailCatalog.stickers.length *
           NailCatalog.rings.length *
           NailShape.values.length;
 
-      expect(combinations, 20736);
+      expect(combinations, 41472);
     });
   });
 

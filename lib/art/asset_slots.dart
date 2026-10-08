@@ -42,6 +42,11 @@ abstract final class ArtSlots {
     'gallery',
     'rewards',
     'settings',
+    'gifts',
+    'gift_blush',
+    'gift_mint',
+    'gift_sky',
+    'gift_sunny',
   ];
 
   // --- Big props ----------------------------------------------------------

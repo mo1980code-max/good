@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'design_files.dart';
 import 'gallery_item.dart';
 
 /// Everything the child has earned and created (persisted on the device).
@@ -15,6 +16,7 @@ class ProgressState {
     this.achievements = const <String>{},
     this.spaStepsCompleted = 0,
     this.boxesOpened = 0,
+    this.openedGiftBoxes = const <String>{},
   });
 
   static const ProgressState initial = ProgressState();
@@ -46,12 +48,28 @@ class ProgressState {
   /// Surprise boxes opened — feeds the "surprise" achievement.
   final int boxesOpened;
 
+  /// Ids of the gift-room boxes that were already opened (`room.box`).
+  /// A box id can appear here exactly once, which is the whole
+  /// "a gift is never handed out twice" guarantee: the id and its prize are
+  /// written in the same state transition.
+  final Set<String> openedGiftBoxes;
+
   int get designCount => gallery.length;
 
   bool isUnlocked(String itemId) => unlockedItemIds.contains(itemId);
 
   /// Free items (`price == 0`) are always usable.
-  bool canUse(String itemId, {int price = 0}) => price <= 0 || isUnlocked(itemId);
+  /// **Gift-only items are never free**: they can only be unlocked by a gift
+  /// box, so they are usable if — and only if — they were already granted.
+  bool canUse(String itemId, {int price = 0, bool giftOnly = false}) {
+    if (isUnlocked(itemId)) return true;
+    return !giftOnly && price <= 0;
+  }
+
+  /// Gift boxes already opened in one room.
+  int giftBoxesOpenedIn(String roomId) => openedGiftBoxes
+      .where((String id) => id.startsWith('$roomId.'))
+      .length;
 
   ProgressState copyWith({
     int? stars,
@@ -63,6 +81,7 @@ class ProgressState {
     Set<String>? achievements,
     int? spaStepsCompleted,
     int? boxesOpened,
+    Set<String>? openedGiftBoxes,
   }) {
     return ProgressState(
       stars: stars ?? this.stars,
@@ -74,6 +93,7 @@ class ProgressState {
       achievements: achievements ?? this.achievements,
       spaStepsCompleted: spaStepsCompleted ?? this.spaStepsCompleted,
       boxesOpened: boxesOpened ?? this.boxesOpened,
+      openedGiftBoxes: openedGiftBoxes ?? this.openedGiftBoxes,
     );
   }
 
@@ -96,6 +116,26 @@ class ProgressState {
     return changed ? copyWith(gallery: merged) : this;
   }
 
+  /// Second, index-free safety net: the file name of a design is derived from
+  /// its id, so any design whose PNG really exists on disk gets its picture
+  /// back — even if the `designId -> name` index never landed (app killed
+  /// between the file write and the index write).
+  ///
+  /// Pure: it only receives the ids that were found on disk.
+  ProgressState withAvailableDesigns(Set<String> idsOnDisk) {
+    if (idsOnDisk.isEmpty || gallery.isEmpty) return this;
+
+    bool changed = false;
+    final List<GalleryItem> merged = gallery.map((GalleryItem item) {
+      if (item.imageFileName != null) return item;
+      if (!idsOnDisk.contains(item.id)) return item;
+      changed = true;
+      return item.copyWith(imageFileName: DesignFiles.nameFor(item.id));
+    }).toList();
+
+    return changed ? copyWith(gallery: merged) : this;
+  }
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'stars': stars,
@@ -107,6 +147,7 @@ class ProgressState {
       'achievements': achievements.toList(),
       'spaSteps': spaStepsCompleted,
       'boxesOpened': boxesOpened,
+      'giftBoxes': openedGiftBoxes.toList(),
     };
   }
 
@@ -133,6 +174,7 @@ class ProgressState {
       achievements: _asStringSet(json['achievements']),
       spaStepsCompleted: _asInt(json['spaSteps']),
       boxesOpened: _asInt(json['boxesOpened']),
+      openedGiftBoxes: _asStringSet(json['giftBoxes']),
     );
   }
 }
