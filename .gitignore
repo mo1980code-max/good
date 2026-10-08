@@ -1,0 +1,39 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# iOS / macOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+macos/Pods/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Keep shipped art/sound that is intentionally part of the game
+!assets/**/*.png
+!assets/**/*.mp3
+!assets/**/*.wav
+!assets/**/*.ogg
+!assets/**/*.json
+!assets/**/*.ttf
