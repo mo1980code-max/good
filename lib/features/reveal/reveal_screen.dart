@@ -277,9 +277,19 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                               controller: _shot,
                               child: DesignPreview(
                                 shape: NailShape.fromId(item?.shapeId),
+                                nailLength: NailLength.fromId(item?.nailLengthId),
                                 colorOption: item == null
                                     ? null
                                     : NailCatalog.colorById(item.colorId),
+                                nailColors: item == null
+                                    ? const <int, Color>{}
+                                    : <int, Color>{
+                                        for (final MapEntry<int, String> entry
+                                            in item.nailColors.entries)
+                                          entry.key: NailCatalog
+                                              .colorById(entry.value)
+                                              .color,
+                                      },
                                 pattern: item == null
                                     ? null
                                     : NailCatalog.patternById(item.patternId),

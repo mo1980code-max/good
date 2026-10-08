@@ -64,6 +64,8 @@ class ProgressController extends Notifier<ProgressState> {
       ringId: round.ringId ?? NailCatalog.rings.first.id,
       createdAtMs: stamp,
       imageFileName: imageFileName,
+      nailLengthId: round.nailLengthId,
+      nailColors: round.nailColors,
     );
 
     // Newest first, capped so the save file stays small and fast.
@@ -91,11 +93,24 @@ class ProgressController extends Notifier<ProgressState> {
           item.colorId == round.colorId &&
           item.patternId == round.patternId &&
           item.stickerId == round.stickerId &&
-          item.ringId == round.ringId) {
+          item.ringId == round.ringId &&
+          item.nailLengthId == round.nailLengthId &&
+          _sameNailColours(item.nailColors, round.nailColors)) {
         return item;
       }
     }
     return null;
+  }
+
+  bool _sameNailColours(
+    Map<int, String> saved,
+    Map<int, String> current,
+  ) {
+    if (saved.length != current.length) return false;
+    for (final MapEntry<int, String> entry in current.entries) {
+      if (saved[entry.key] != entry.value) return false;
+    }
+    return true;
   }
 
   /// Heals the album once per session:

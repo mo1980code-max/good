@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../data/models/nail_item_model.dart';
+import 'realistic_hand.dart';
 import 'safe_asset_image.dart';
 
 /// Fallback icons so stickers and rings look cute even before art ships.
@@ -44,14 +45,16 @@ IconData ringIcon(String id) {
   };
 }
 
-/// The star of the whole game: a cute hand wearing the child's design.
+/// The finished-design wrapper used by Studio, Reveal and Album.
 ///
-/// Renders from the *recipe* (shape, color, pattern, sticker, ring) so the
-/// album, the studio and the reveal always agree — and no bitmap is required.
+/// It deliberately delegates to the same photographic hand and nail masks as
+/// the live studio, so a child sees the real result again in the album.
 class DesignPreview extends StatelessWidget {
   const DesignPreview({
     this.shape,
+    this.nailLength = NailLength.medium,
     this.colorOption,
+    this.nailColors = const <int, Color>{},
     this.pattern,
     this.sticker,
     this.ring,
@@ -63,7 +66,9 @@ class DesignPreview extends StatelessWidget {
   });
 
   final NailShape? shape;
+  final NailLength nailLength;
   final NailColorOption? colorOption;
+  final Map<int, Color> nailColors;
   final NailPattern? pattern;
   final DecorItem? sticker;
   final DecorItem? ring;
@@ -72,127 +77,21 @@ class DesignPreview extends StatelessWidget {
   final bool showSparkles;
   final double padding;
 
-  static const Color _skin = Color(0xFFFFD9BE);
-  static const Color _skinDeep = Color(0xFFF5C4A4);
-  static const Color _outline = Color(0xFFE0A783);
+  /// Used by the option swatches as the unpainted natural-nail colour.
   static const Color _bare = Color(0xFFFFF0E4);
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double w = constraints.maxWidth - padding * 2;
-        final double h = constraints.maxHeight - padding * 2;
-
-        final double nailW = w * 0.135;
-        final double nailH = h * 0.26;
-
-        return Padding(
-          padding: EdgeInsets.all(padding),
-          child: SizedBox(
-            width: w,
-            height: h,
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: <Widget>[
-                if (showSparkles)
-                  Positioned.fill(child: _SparkleLayer(show: showSparkles)),
-                // Palm
-                Positioned(
-                  bottom: 0,
-                  child: Container(
-                    width: w * 0.70,
-                    height: h * 0.36,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: <Color>[_skin, _skinDeep],
-                      ),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(w * 0.16),
-                        topRight: Radius.circular(w * 0.16),
-                        bottomLeft: Radius.circular(w * 0.20),
-                        bottomRight: Radius.circular(w * 0.20),
-                      ),
-                      border: Border.all(color: _outline, width: 2.4),
-                      boxShadow: const <BoxShadow>[
-                        BoxShadow(
-                          color: AppColors.shadow,
-                          blurRadius: 14,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Fingers with their nails
-                Positioned(
-                  top: 0,
-                  bottom: h * 0.20,
-                  left: w * 0.06,
-                  right: w * 0.06,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: List<Widget>.generate(4, (int index) {
-                      final bool isStickerFinger = index == 1;
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: w * 0.012),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: <Color>[_skin, _skinDeep],
-                              ),
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(nailW),
-                                topRight: Radius.circular(nailW),
-                                bottomLeft: Radius.circular(w * 0.05),
-                                bottomRight: Radius.circular(w * 0.05),
-                              ),
-                              border: Border.all(color: _outline, width: 2.4),
-                            ),
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: Padding(
-                                padding: EdgeInsets.only(top: h * 0.02),
-                                child: SizedBox(
-                                  width: nailW,
-                                  height: nailH,
-                                  child: NailSwatch(
-                                    shape: shape ?? NailShape.round,
-                                    color: colorOption?.color ?? _bare,
-                                    patternId: pattern?.id,
-                                    sticker: isStickerFinger && showSticker
-                                        ? sticker
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-                // Ring on the middle finger, right above the palm
-                if (showRing && ring != null)
-                  Positioned(
-                    bottom: h * 0.30,
-                    left: w * 0.30,
-                    child: Transform.rotate(
-                      angle: 0.12,
-                      child: _Ring(ring: ring!, size: w * 0.10),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
+    return RealisticHandPreview(
+      shape: shape ?? NailShape.round,
+      nailLength: nailLength,
+      colorOption: colorOption,
+      nailColors: nailColors,
+      pattern: pattern,
+      sticker: showSticker ? sticker : null,
+      ring: showRing ? ring : null,
+      showSparkles: showSparkles,
+      padding: padding,
     );
   }
 }

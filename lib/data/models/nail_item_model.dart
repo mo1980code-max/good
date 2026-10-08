@@ -22,6 +22,25 @@ enum NailShape {
   }
 }
 
+/// Length is independent from shape so a child can try short, salon and long
+/// looks without changing the photographic hand itself.
+enum NailLength {
+  short('short', 'Short', 0.86),
+  medium('medium', 'Medium', 1.0),
+  long('long', 'Long', 1.30);
+
+  const NailLength(this.id, this.label, this.factor);
+
+  final String id;
+  final String label;
+  final double factor;
+
+  static NailLength fromId(String? id) => values.firstWhere(
+        (NailLength length) => length.id == id,
+        orElse: () => NailLength.medium,
+      );
+}
+
 /// A polish color. `price == 0` means "unlocked from the first run".
 @immutable
 class NailColorOption {
