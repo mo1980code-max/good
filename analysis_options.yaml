@@ -1,0 +1,21 @@
+# Analysis rules for Sparkle Nail Spa.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+  errors:
+    # Treat these as hard errors so they can never slip into a release build.
+    missing_required_param: error
+    missing_return: error
+    invalid_use_of_protected_member: error
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+    avoid_print: true
+    directives_ordering: true
+    sort_child_properties_last: true

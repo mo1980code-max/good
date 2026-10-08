@@ -1,0 +1,68 @@
+name: sparkle_nail_spa
+description: "Sparkle Nail Spa — a cute, fully offline nail-spa game for kids (ages 3-8)."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  # Flutter 3.27+ / Dart 3.6+ is required for Color.withValues() and CardThemeData.
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # --- State management ---
+  flutter_riverpod: ^2.6.1
+
+  # --- Navigation ---
+  go_router: ^14.6.2
+
+  # --- Local storage (device only, never cloud) ---
+  shared_preferences: ^2.3.3
+  path_provider: ^2.1.5
+
+  # --- Audio ---
+  audioplayers: ^6.1.0
+
+  # --- Motion & celebration ---
+  flutter_animate: ^4.5.0
+  confetti: ^0.8.0
+  lottie: ^3.1.2
+
+  # --- Capture the finished design as a PNG ---
+  screenshot: ^3.0.0
+
+  # --- Icons ---
+  flutter_svg: ^2.0.16
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/images/characters/
+    - assets/images/tools/
+    - assets/images/stickers/
+    - assets/images/ui/
+    - assets/sounds/
+    - assets/animations/
+
+  # Offline fonts (no runtime download, no network — see GDD section 12).
+  # 1. Drop Fredoka TTFs into assets/fonts/
+  # 2. Uncomment the block below
+  # 3. The theme already asks for the "Fredoka" family (AppTheme.fontFamily);
+  #    if the font is missing the app still runs and silently falls back.
+  # fonts:
+  #   - family: Fredoka
+  #     fonts:
+  #       - asset: assets/fonts/Fredoka-Regular.ttf
+  #       - asset: assets/fonts/Fredoka-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Fredoka-Bold.ttf
+  #         weight: 700
