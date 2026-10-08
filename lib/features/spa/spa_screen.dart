@@ -51,6 +51,7 @@ class SpaScreen extends ConsumerWidget {
     );
 
     return KidScreen(
+      roomId: 'spa',
       center: StepDots(
         count: RoundState.spaStepCount,
         current: round.spaStep,

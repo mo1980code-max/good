@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/parent_gate.dart';
+import '../../core/utils/responsive.dart';
 import '../../core/utils/sound_helper.dart';
 import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
@@ -26,6 +27,7 @@ class GalleryScreen extends ConsumerWidget {
         ref.watch(progressControllerProvider.select((p) => p.gallery));
 
     return KidScreen(
+      roomId: 'gallery',
       center: CounterPill(
         icon: Icons.photo_library_rounded,
         value: gallery.length,
@@ -37,9 +39,8 @@ class GalleryScreen extends ConsumerWidget {
           : GridView.builder(
               padding: const EdgeInsets.only(bottom: 8),
               itemCount: gallery.length,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: Responsive.albumColumns(context),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
                 childAspectRatio: 0.80,

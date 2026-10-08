@@ -14,9 +14,35 @@ just big friendly buttons, sparkles and happy sounds.
 | Phase | Scope | State |
 |---|---|---|
 | **Phase 1 — Architecture** | models, storage, state management, routing, theme, helpers | ✅ done |
-| **Phase 1 — Screens** | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | ✅ **done (this revision)** |
-| Phase 2 — Polish | real sounds/art, extra rooms, unlockable themes, achievements | 🕐 next |
-| Phase 3 — Release | device testing, assets, store screenshots, privacy policy, age rating | 🕐 |
+| **Phase 1 — Screens** | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | ✅ done |
+| **Phase 2.1 — Art & theme** | replaceable art layer, room backdrops, tablet layout, 7 real art assets | ✅ **done (this revision)** |
+| Phase 2.2 — Audio engine | sound pool, throttling, real SFX files, music loop | 🕐 next |
+| Phase 2.3 — Motion | screen transitions, reveal choreography, celebrations | 🕐 |
+| Phase 2.4 — Achievements | star wall, badges, streak rewards | 🕐 |
+| Phase 2.5 — Gift rooms | surprise boxes, unlockable themes | 🕐 |
+| Phase 2.6 — Hardening | tests, performance, final polish | 🕐 |
+| Phase 3 — Release | device testing, store screenshots, privacy policy, age rating | 🕐 |
+
+### Art layer (Phase 2.1)
+
+```
+lib/art/
+  art_direction.dart    design tokens + the character/room sheets
+  asset_slots.dart      the only place that knows art file paths
+  art_or_fallback.dart  show the file if it exists, draw it if not
+```
+
+* Drop a correctly named PNG into `assets/images/...` and it appears —
+  **no code change**.
+* Delete the whole `assets/` folder and the game still looks intentional
+  (faces, hand, nails, patterns and sparkles are all painted procedurally).
+* **Shipped art:** `logo.png` + the six character portraits, one consistent
+  style, already cropped to squares and optimised (7.9 MB → 3.1 MB).
+* Rooms, tools, stickers, rings and frames are pending — ready-made prompts
+  live in [docs/art-prompts.md](docs/art-prompts.md), and the rules in
+  [docs/art-bible.md](docs/art-bible.md).
+* Tablets are supported: content stays inside a comfortable width and grids
+  gain a column (`lib/core/utils/responsive.dart`).
 
 **Everything runs with zero art files.** Faces, the spa hand, nails, patterns,
 stickers and rings are drawn procedurally (CustomPainter), so the game is
@@ -85,7 +111,8 @@ Drop your art/audio into `assets/` using the **exact names** listed in
 [`lib/core/constants/assets.dart`](lib/core/constants/assets.dart):
 
 ```
-assets/images/ui/logo.png
+assets/images/ui/logo.png        # ✅ shipped
+assets/images/rooms/{home,spa,...}.png          # optional room backdrops
 assets/images/characters/{kitty,bunny,panda,unicorn,fairy,kid}.png
 assets/images/tools/{sponge,soap,towel,cream,brush,water}.png
 assets/images/stickers/{star,heart,...,butterfly}.png

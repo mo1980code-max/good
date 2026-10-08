@@ -42,6 +42,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     final bool canClaim = controller.canClaimDailyReward();
 
     return KidScreen(
+      roomId: 'rewards',
       center: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[

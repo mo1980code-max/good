@@ -3,12 +3,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../art/art_or_fallback.dart';
 import '../../core/router/app_routes.dart';
+import '../../core/utils/responsive.dart';
 import '../../core/utils/sound_helper.dart';
 import '../../data/models/character_model.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
-import '../../widgets/character_face.dart';
 import '../../widgets/kid_screen.dart';
 import '../../widgets/option_tile.dart';
 
@@ -22,6 +23,7 @@ class CharacterSelectScreen extends ConsumerWidget {
         ref.watch(roundControllerProvider.select((r) => r.characterId));
 
     return KidScreen(
+      roomId: 'characters',
       center: const Text(
         'Pick a friend',
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
@@ -38,7 +40,7 @@ class CharacterSelectScreen extends ConsumerWidget {
                     (tile * 0.72).clamp(60.0, 140.0).toDouble();
 
                 return GridView.count(
-                  crossAxisCount: 2,
+                  crossAxisCount: Responsive.characterColumns(context),
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   childAspectRatio: 0.86,
@@ -56,15 +58,12 @@ class CharacterSelectScreen extends ConsumerWidget {
                                 .startRound(character.id);
                             SoundHelper.success();
                           },
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: CharacterFace(
-                              character: character,
-                              size: faceSize,
-                              mood: character.id == selectedId
-                                  ? FaceMood.happy
-                                  : FaceMood.calm,
-                            ),
+                          child: CharacterArt(
+                            character: character,
+                            size: faceSize,
+                            mood: character.id == selectedId
+                                ? FaceMood.happy
+                                : FaceMood.calm,
                           ),
                         ),
                       ),

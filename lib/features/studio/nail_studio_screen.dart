@@ -40,6 +40,7 @@ class NailStudioScreen extends ConsumerWidget {
     final DecorItem ring = NailCatalog.ringById(round.ringId);
 
     return KidScreen(
+      roomId: 'studio',
       center: StepDots(
         count: RoundState.studioStepCount,
         current: round.studioStep,

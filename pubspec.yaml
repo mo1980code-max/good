@@ -50,6 +50,7 @@ flutter:
     - assets/images/tools/
     - assets/images/stickers/
     - assets/images/ui/
+    - assets/images/rooms/
     - assets/sounds/
     - assets/animations/
 

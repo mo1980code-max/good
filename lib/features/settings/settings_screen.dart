@@ -25,6 +25,7 @@ class SettingsScreen extends ConsumerWidget {
         ref.read(settingsControllerProvider.notifier);
 
     return KidScreen(
+      roomId: 'settings',
       center: const Text(
         'Grown-ups',
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),

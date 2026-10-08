@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../art/art_or_fallback.dart';
 import '../../core/constants/assets.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
@@ -35,6 +36,7 @@ class HomeScreen extends ConsumerWidget {
       // The system back button must not close the game from Home.
       onBack: () {},
       child: CuteBackground(
+        backdrop: const RoomBackdrop(roomId: 'home'),
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: SafeArea(
@@ -155,7 +157,8 @@ class _Greeting extends StatelessWidget {
           onTap: () => context.go(AppRoutes.characters),
           child: IdleBreathe(
             scale: 1.04,
-            child: CharacterFace(
+            // Illustrated portrait when art exists, living face otherwise.
+            child: CharacterArt(
               character: character,
               size: 132,
               mood: FaceMood.happy,

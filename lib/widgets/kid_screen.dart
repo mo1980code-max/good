@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../art/art_or_fallback.dart';
 import '../core/theme/app_colors.dart';
+import '../core/utils/responsive.dart';
 import '../core/utils/sound_helper.dart';
 import '../features/game/game_providers.dart';
 import '../widgets/cute_background.dart';
@@ -24,6 +26,7 @@ class KidScreen extends ConsumerWidget {
     this.padding = const EdgeInsets.fromLTRB(16, 4, 16, 12),
     this.scrollable = false,
     this.sparkles = true,
+    this.roomId,
     super.key,
   });
 
@@ -40,12 +43,17 @@ class KidScreen extends ConsumerWidget {
   final bool scrollable;
   final bool sparkles;
 
+  /// Optional illustrated backdrop for this room (see `lib/art/asset_slots.dart`).
+  /// `null` keeps the plain pastel gradient.
+  final String? roomId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return KidPopScope(
       onBack: onBack ?? () => goHome(context),
       child: CuteBackground(
         sparkles: sparkles,
+        backdrop: roomId == null ? null : RoomBackdrop(roomId: roomId!),
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: SafeArea(
@@ -73,12 +81,21 @@ class KidScreen extends ConsumerWidget {
                   ),
                 ),
                 Expanded(
-                  child: scrollable
-                      ? SingleChildScrollView(
-                          padding: padding,
-                          child: body,
-                        )
-                      : Padding(padding: padding, child: body),
+                  // Tablets never get a stretched layout: content stays
+                  // inside a comfortable width, centred.
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: Responsive.contentMaxWidth,
+                      ),
+                      child: scrollable
+                          ? SingleChildScrollView(
+                              padding: padding,
+                              child: body,
+                            )
+                          : Padding(padding: padding, child: body),
+                    ),
+                  ),
                 ),
               ],
             ),

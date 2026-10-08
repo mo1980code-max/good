@@ -140,6 +140,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     final GalleryItem? item = _item ?? _firstItem();
 
     return KidScreen(
+      roomId: 'reveal',
       center: const Text(
         'Great job!',
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
