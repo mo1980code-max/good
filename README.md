@@ -103,7 +103,7 @@ was never run.** What the review actually changed:
 | Images decoded at full size for tiny widgets (488 KB logo → 120 px) | `SafeAssetImage` now passes `cacheWidth`/`cacheHeight` from the display size |
 | Unused packages `lottie` + `flutter_svg`, a dead `sparkleAnim` asset, an empty asset dir | removed (with the stale README lines) |
 | 2 unused imports + 15 files with unordered imports | removed / sorted (`directives_ordering`) |
-| The destructive dialog was **written** (up to 12 words) and a single static hold could be an accident | gate is now **textless** (icon-only cancel) and irreversibles ask for **two displaced holds** |
+| The destructive dialog was **written** (up to 12 words) and a single static hold could be an accident | gate is now **textless** (icon-only cancel) and irreversibles ask for **two displaced holds**. This is an *accident barrier* — never a parental-identity check |
 
 A new `test/safety_test.dart` locks the promises that need no device: no
 ads/purchases/tracking/network packages, no URL or `HttpClient` anywhere in

@@ -7,8 +7,11 @@ import '../theme/app_colors.dart';
 
 /// A **textless** grown-ups gate (GDD section 12).
 ///
-/// The child would have to *hold* the widget for 3 seconds on purpose —
-/// something a 3-5 year old almost never does by accident.
+/// **An accident barrier — not a parental-identity check.** No offline app can
+/// prove who is holding the phone; this only makes an accidental touch
+/// practically impossible, because the child has to *hold* the widget for
+/// 3 seconds on purpose (something a 3-5 year old almost never does by
+/// accident).
 /// Wrap any sensitive button with it:
 ///
 /// ```dart
@@ -113,8 +116,10 @@ class _ParentGateState extends State<ParentGate>
 /// peach** and asks for a second hold — a small hand resting on the screen
 /// does not do two displaced holds by accident.
 ///
-/// This does not *prove* an adult is present (nothing offline can); it makes
-/// an accidental erase as unlikely as a kids game reasonably can.
+/// Same honest framing as [ParentGate]: this is **protection against an
+/// accidental erase**, never proof that a grown-up is present. Two displaced
+/// holds simply make the accident rarer; the wording in every document calls
+/// it exactly that.
 ///
 /// Returns `true` only when the required hold(s) were completed.
 Future<bool> showParentGateDialog(
