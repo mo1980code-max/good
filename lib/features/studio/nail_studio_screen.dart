@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/animations/entrances.dart';
 import '../../core/animations/motion_tokens.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/audio/sound_helper.dart';
 import '../../data/models/character_model.dart';
 import '../../data/models/nail_item_model.dart';
 import '../../data/models/progress_state.dart';

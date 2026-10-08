@@ -12,6 +12,23 @@ import 'motion_tokens.dart';
 ///      iOS "Reduce Motion"), surfaced by `MediaQuery.disableAnimations`.
 ///
 /// The logic is deliberately pure so it can be unit-tested without a device.
+/// Starts or stops a looping ticker to match the motion policy.
+///
+/// `run: false` really **stops** the ticker instead of only hiding the effect:
+/// a loop left running under "calm motion" would keep rebuilding an invisible
+/// widget on every frame — the exact battery cost this policy exists to avoid.
+void syncLoopTicker(
+  AnimationController controller, {
+  required bool run,
+  bool reverse = false,
+}) {
+  if (run) {
+    if (!controller.isAnimating) controller.repeat(reverse: reverse);
+  } else if (controller.isAnimating) {
+    controller.stop();
+  }
+}
+
 @immutable
 class MotionPolicy {
   const MotionPolicy({required this.reduceMotion});

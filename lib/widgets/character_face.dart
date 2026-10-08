@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/animations/motion_policy.dart';
 import '../core/theme/app_colors.dart';
 import '../data/models/character_model.dart';
 
@@ -13,7 +15,7 @@ enum FaceMood { calm, happy, amazed, sleepy }
 /// Why not images? The game must look alive and cute even before any art is
 /// delivered, and a painted face can blink, breathe and react instantly —
 /// which is exactly what GDD law #6 ("the mascot is alive") asks for.
-class CharacterFace extends StatefulWidget {
+class CharacterFace extends ConsumerStatefulWidget {
   const CharacterFace({
     required this.character,
     this.size = 150,
@@ -28,15 +30,30 @@ class CharacterFace extends StatefulWidget {
   final bool blink;
 
   @override
-  State<CharacterFace> createState() => _CharacterFaceState();
+  ConsumerState<CharacterFace> createState() => _CharacterFaceState();
 }
 
-class _CharacterFaceState extends State<CharacterFace>
+class _CharacterFaceState extends ConsumerState<CharacterFace>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 3600),
-  )..repeat();
+  );
+
+  /// Keeps the looping "alive" ticker in step with the motion setting:
+  /// calm mode paints a single still frame (no blink, no breathing).
+  void _syncTicker(bool calm) {
+    if (calm) {
+      if (_controller.value != 0) {
+        // Setting `value` also stops the ticker.
+        _controller.value = 0;
+      } else if (_controller.isAnimating) {
+        _controller.stop();
+      }
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
 
   @override
   void dispose() {
@@ -46,6 +63,8 @@ class _CharacterFaceState extends State<CharacterFace>
 
   @override
   Widget build(BuildContext context) {
+    _syncTicker(MotionPolicy.of(context, ref).reduceMotion);
+
     return SizedBox(
       width: widget.size,
       height: widget.size,

@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/router/app_routes.dart';
 import '../core/animations/motion_policy.dart';
+import '../core/router/app_routes.dart';
 import '../core/theme/app_colors.dart';
-import '../features/game/game_providers.dart';
 
 /// Keeps a widget subtly alive (breathing). Respects "reduce motion".
 class IdleBreathe extends ConsumerStatefulWidget {
@@ -31,7 +30,7 @@ class _IdleBreatheState extends ConsumerState<IdleBreathe>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: widget.duration,
-  )..repeat(reverse: true);
+  );
 
   @override
   void dispose() {
@@ -42,7 +41,9 @@ class _IdleBreatheState extends ConsumerState<IdleBreathe>
   @override
   Widget build(BuildContext context) {
     // Calmed by either the in-game toggle or the system setting.
-    if (MotionPolicy.of(context, ref).reduceMotion) return widget.child;
+    final bool calm = MotionPolicy.of(context, ref).reduceMotion;
+    syncLoopTicker(_controller, run: !calm, reverse: true);
+    if (calm) return widget.child;
 
     return ScaleTransition(
       scale: Tween<double>(begin: 1, end: widget.scale).animate(
@@ -78,7 +79,7 @@ class _SparkleBurstState extends ConsumerState<SparkleBurst>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 3),
-  )..repeat();
+  );
 
   late final List<_Sparkle> _sparkles = _buildSparkles();
 
@@ -104,7 +105,9 @@ class _SparkleBurstState extends ConsumerState<SparkleBurst>
 
   @override
   Widget build(BuildContext context) {
-    if (MotionPolicy.of(context, ref).reduceMotion) {
+    final bool calm = MotionPolicy.of(context, ref).reduceMotion;
+    syncLoopTicker(_controller, run: !calm);
+    if (calm) {
       return const SizedBox.shrink();
     }
 
@@ -210,7 +213,7 @@ class _HintHandState extends ConsumerState<HintHand>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
-  )..repeat(reverse: true);
+  );
 
   @override
   void dispose() {
@@ -221,6 +224,8 @@ class _HintHandState extends ConsumerState<HintHand>
   @override
   Widget build(BuildContext context) {
     final bool reduceMotion = MotionPolicy.of(context, ref).reduceMotion;
+    // The hand freezes in the middle instead of waving on an invisible ticker.
+    syncLoopTicker(_controller, run: !reduceMotion, reverse: true);
 
     return IgnorePointer(
       child: AnimatedBuilder(

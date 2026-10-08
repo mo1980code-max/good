@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../animations/screen_transitions.dart';
-
 import '../../features/achievements/achievements_screen.dart';
 import '../../features/characters/character_select_screen.dart';
 import '../../features/gallery/gallery_screen.dart';
@@ -15,6 +13,7 @@ import '../../features/settings/settings_screen.dart';
 import '../../features/spa/spa_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/studio/nail_studio_screen.dart';
+import '../animations/screen_transitions.dart';
 import 'app_routes.dart';
 
 /// One place for navigation.

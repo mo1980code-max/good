@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/animations/motion_policy.dart';
 import '../core/theme/app_colors.dart';
 import '../core/utils/feedback_helper.dart';
 
@@ -8,7 +10,7 @@ import '../core/utils/feedback_helper.dart';
 /// * Never smaller than [height] — designed for a 3-year-old finger.
 /// * A shine sweeps across it so it *looks* tappable.
 /// * Tapping squishes it slightly (kid-friendly confirmation).
-class BigButton extends StatefulWidget {
+class BigButton extends ConsumerStatefulWidget {
   const BigButton({
     required this.icon,
     required this.onPressed,
@@ -31,10 +33,10 @@ class BigButton extends StatefulWidget {
   final double iconSize;
 
   @override
-  State<BigButton> createState() => _BigButtonState();
+  ConsumerState<BigButton> createState() => _BigButtonState();
 }
 
-class _BigButtonState extends State<BigButton> {
+class _BigButtonState extends ConsumerState<BigButton> {
   bool _pressed = false;
 
   bool get _active => widget.enabled && widget.onPressed != null;
@@ -46,6 +48,10 @@ class _BigButtonState extends State<BigButton> {
 
   @override
   Widget build(BuildContext context) {
+    // A continuously sweeping shine is a battery cost and an unwanted
+    // distraction when the family asked for calm motion — so it freezes.
+    final bool calm = MotionPolicy.of(context, ref).reduceMotion;
+
     final Gradient gradient = widget.gradient ??
         LinearGradient(
           begin: Alignment.topLeft,
@@ -99,7 +105,7 @@ class _BigButtonState extends State<BigButton> {
                 child: Stack(
                   children: <Widget>[
                     if (_active)
-                      Positioned.fill(child: _Shine(height: widget.height)),
+                      Positioned.fill(child: _Shine(height: widget.height, animate: !calm)),
                     Center(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -140,9 +146,12 @@ class _BigButtonState extends State<BigButton> {
 
 /// A slow diagonal shine that sells the "press me" feeling.
 class _Shine extends StatefulWidget {
-  const _Shine({required this.height});
+  const _Shine({required this.height, required this.animate});
 
   final double height;
+
+  /// `false` under reduced motion — the shine stays parked off-screen.
+  final bool animate;
 
   @override
   State<_Shine> createState() => _ShineState();
@@ -152,7 +161,25 @@ class _ShineState extends State<_Shine> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2600),
-  )..repeat();
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) _controller.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _Shine oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Calm motion can be switched on while a button is already on screen:
+    // the loop must die (and come back) with the setting.
+    if (widget.animate && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!widget.animate && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
 
   @override
   void dispose() {

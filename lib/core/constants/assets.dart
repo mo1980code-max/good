@@ -67,7 +67,4 @@ abstract final class Assets {
   static const String sfxVictory = 'audio/sfx/victory.mp3';
   static const String sfxApplause = 'audio/sfx/applause.mp3';
   static const String musicSpaLoop = 'audio/music/spa_loop.mp3';
-
-  // --- Animations ---
-  static const String sparkleAnim = 'assets/animations/sparkle.json';
 }

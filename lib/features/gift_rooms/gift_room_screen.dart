@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/animations/celebration.dart';
 import '../../core/animations/entrances.dart';
 import '../../core/animations/motion_policy.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../core/gift_rooms/gift_room.dart';
 import '../../core/gift_rooms/gift_room_engine.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/audio/sound_helper.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/models/progress_state.dart';
 import '../../features/game/game_providers.dart';
@@ -143,6 +143,10 @@ class _GiftRoomScreenState extends ConsumerState<GiftRoomScreen> {
         await SoundHelper.pop();
         if (!mounted) return;
         setState(() => _hintBoxId = box.id);
+        // One-shot hint: the tile always settles back where it was.
+        Future<void>.delayed(const Duration(milliseconds: 260), () {
+          if (mounted) setState(() => _hintBoxId = null);
+        });
         return;
 
       case GiftBoxState.ready:

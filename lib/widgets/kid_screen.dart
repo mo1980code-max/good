@@ -5,11 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../art/art_or_fallback.dart';
 import '../core/theme/app_colors.dart';
 import '../core/utils/responsive.dart';
-import '../core/audio/sound_helper.dart';
-import '../features/game/game_providers.dart';
 import '../widgets/cute_background.dart';
 import '../widgets/icon_bubble_button.dart';
 import '../widgets/motion.dart';
+import '../widgets/quick_mute_button.dart';
 
 /// Every screen shares the same skeleton:
 /// [home/back] ... [step dots or title] ... [quick mute], then the content.
@@ -32,7 +31,8 @@ class KidScreen extends ConsumerWidget {
 
   final Widget body;
 
-  /// `null` while [showLeading] is true means "back to Home".
+  /// Optional "one level up" action (shown as a small arrow next to Home).
+  /// Home itself is always available, on every screen.
   final VoidCallback? onBack;
   final bool showLeading;
 
@@ -63,20 +63,34 @@ class KidScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: Row(
                     children: <Widget>[
+                      // Home never moves and never disappears: whatever else a
+                      // screen offers, the same corner always leads back to the
+                      // three big doors.
                       if (showLeading)
                         IconBubbleButton(
-                          icon: onBack == null
-                              ? Icons.home_rounded
-                              : Icons.arrow_back_rounded,
+                          icon: Icons.home_rounded,
                           semanticLabel: 'Home',
                           size: 58,
                           iconColor: AppColors.lavender,
-                          onPressed: onBack ?? () => goHome(context),
+                          onPressed: () => goHome(context),
                         ),
+                      // An extra step back (e.g. gift room -> gift hall) sits
+                      // beside it, so "up one level" and "all the way home"
+                      // can never be confused.
+                      if (showLeading && onBack != null) ...<Widget>[
+                        const SizedBox(width: 8),
+                        IconBubbleButton(
+                          icon: Icons.arrow_back_rounded,
+                          semanticLabel: 'Back',
+                          size: 50,
+                          iconColor: AppColors.mint,
+                          onPressed: onBack!,
+                        ),
+                      ],
                       Expanded(
                         child: Center(child: center ?? const SizedBox.shrink()),
                       ),
-                      if (showSound) const _QuickMuteButton(),
+                      if (showSound) const QuickMuteButton(),
                     ],
                   ),
                 ),
@@ -102,38 +116,6 @@ class KidScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// One tap silences (or restores) sound **and** music — GDD requires a mute
-/// button that a child can find instantly, without opening any menu.
-class _QuickMuteButton extends ConsumerWidget {
-  const _QuickMuteButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bool soundOn =
-        ref.watch(settingsControllerProvider.select((s) => s.soundOn));
-    final bool musicOn =
-        ref.watch(settingsControllerProvider.select((s) => s.musicOn));
-    final bool quiet = !soundOn && !musicOn;
-
-    final SettingsController controller =
-        ref.read(settingsControllerProvider.notifier);
-
-    return IconBubbleButton(
-      icon: quiet ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-      semanticLabel: quiet ? 'Unmute' : 'Mute',
-      size: 58,
-      iconColor: AppColors.lavender,
-      onPressed: () {
-        controller.setSoundOn(quiet);
-        controller.setMusicOn(quiet);
-        if (quiet) {
-          SoundHelper.tap();
-        }
-      },
     );
   }
 }

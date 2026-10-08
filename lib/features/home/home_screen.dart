@@ -17,6 +17,7 @@ import '../../widgets/counter_pill.dart';
 import '../../widgets/cute_background.dart';
 import '../../widgets/icon_bubble_button.dart';
 import '../../widgets/motion.dart';
+import '../../widgets/quick_mute_button.dart';
 import '../../widgets/safe_asset_image.dart';
 
 /// Home — three big doors: Play, Album, Gifts (+ the grown-ups corner).
@@ -80,24 +81,35 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        CounterPill(
-          icon: Icons.star_rounded,
-          value: stars,
-          color: AppColors.yellow,
+        // The three counters shrink instead of overflowing on a narrow phone.
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: <Widget>[
+                CounterPill(
+                  icon: Icons.star_rounded,
+                  value: stars,
+                  color: AppColors.yellow,
+                ),
+                const SizedBox(width: 8),
+                CounterPill(
+                  icon: Icons.monetization_on_rounded,
+                  value: coins,
+                  color: AppColors.mint,
+                ),
+                const SizedBox(width: 8),
+                CounterPill(
+                  icon: Icons.vpn_key_rounded,
+                  value: keys,
+                  color: AppColors.peach,
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(width: 8),
-        CounterPill(
-          icon: Icons.monetization_on_rounded,
-          value: coins,
-          color: AppColors.mint,
-        ),
-        const SizedBox(width: 8),
-        CounterPill(
-          icon: Icons.vpn_key_rounded,
-          value: keys,
-          color: AppColors.peach,
-        ),
-        const Spacer(),
         // Settings stays behind the grown-ups gate (hold the star for 3s).
         ParentGate(
           onUnlocked: () => context.push(AppRoutes.settings),
@@ -111,6 +123,9 @@ class _TopBar extends StatelessWidget {
             semanticLabel: 'Grown-ups settings',
           ),
         ),
+        const SizedBox(width: 8),
+        // Mute is always the same corner on every screen (see the GDD).
+        const QuickMuteButton(),
       ],
     );
   }

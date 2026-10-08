@@ -4,7 +4,7 @@ A cute, **fully offline** nail-spa game for kids **ages 3–8**.
 No accounts, no ads, no in-app purchases, no external links, no text to read —
 just big friendly buttons, sparkles and happy sounds.
 
-> The full design constitution lives in **[docs/sparkle-nail-spa-gdd.md](docs/sparkle-nail-spa-gdd.md)** (v1.1).
+> The full design constitution lives in **[docs/sparkle-nail-spa-gdd.md](docs/sparkle-nail-spa-gdd.md)** (v1.7).
 > Every implementation decision is measured against it.
 
 ---
@@ -15,12 +15,12 @@ just big friendly buttons, sparkles and happy sounds.
 |---|---|---|
 | **Phase 1 — Architecture** | models, storage, state management, routing, theme, helpers | ✅ done |
 | **Phase 1 — Screens** | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | ✅ done |
-| **Phase 2.1 — Art & theme** | replaceable art layer, room backdrops, tablet layout, 7 real art assets | ✅ **done (this revision)** |
-| **Phase 2.2 — Audio** | `lib/core/audio/` engine + 11 real MP3 files (410 KB) | ✅ **done (this revision)** |
-| **Phase 2.3 — Motion** | shared motion engine, 9 screen entrances, full reveal choreography | ✅ **done (this revision)** |
+| **Phase 2.1 — Art & theme** | replaceable art layer, room backdrops, tablet layout, 7 real art assets | ✅ **done** |
+| **Phase 2.2 — Audio** | `lib/core/audio/` engine + 11 real MP3 files (410 KB) | ✅ **done** |
+| **Phase 2.3 — Motion** | shared motion engine, 9 screen entrances, full reveal choreography | ✅ **done** |
 | **Phase 2.4 — Achievements** | pure engine, 14 badges, star wall screen, save durability fix | ✅ **done** |
-| **Phase 2.5 — Gift rooms** | 4 pastel rooms, 12 one-time surprise boxes, 8 gift-only studio items, pure gift engine | ✅ **done (this revision)** |
-| Phase 2.6 — Hardening | tests, performance, final polish | 🕐 |
+| **Phase 2.5 — Gift rooms** | 4 pastel rooms, 12 one-time surprise boxes, 8 gift-only studio items, pure gift engine | ✅ **done** |
+| **Phase 2.6 — Final QA** | full code review, 10 fixes, safety test suite, docs | 🔎 review + fixes ✅ · `flutter` tests ⏳ — see [docs/final-qa-report.md](docs/final-qa-report.md) |
 | Phase 3 — Release | device testing, store screenshots, privacy policy, age rating | 🕐 |
 
 ### Achievements & star wall (Phase 2.4)
@@ -89,6 +89,32 @@ lib/data/repositories/design_saver.dart
   can no longer twin a design — `completeRound` recognises the same round.
 * Full reasoning: [docs/save-durability.md](docs/save-durability.md).
 
+### Final QA (Phase 2.6)
+
+The whole codebase was re-read with one rule: **no claim of a passing test that
+was never run.** What the review actually changed:
+
+| Finding | Fix |
+|---|---|
+| Home had **no mute button** (it builds its own top bar) | one shared `lib/widgets/quick_mute_button.dart`, used by `KidScreen` **and** Home |
+| A screen passing `onBack` (the gift room) lost the Home corner | Home is now **always** top-left; the optional "one level up" arrow sits beside it |
+| Home counters could overflow on a narrow phone | `Flexible` + `FittedBox(scaleDown)` |
+| **7 looping animations kept spinning while invisible** under *reduce motion* | shared `syncLoopTicker()` stops/starts every loop with the setting (buttons and the mascot included) |
+| Images decoded at full size for tiny widgets (488 KB logo → 120 px) | `SafeAssetImage` now passes `cacheWidth`/`cacheHeight` from the display size |
+| Unused packages `lottie` + `flutter_svg`, a dead `sparkleAnim` asset, an empty asset dir | removed (with the stale README lines) |
+| 2 unused imports + 15 files with unordered imports | removed / sorted (`directives_ordering`) |
+
+A new `test/safety_test.dart` locks the promises that need no device: no
+ads/purchases/tracking/network packages, no URL or `HttpClient` anywhere in
+`lib/`, every audio path has a file, every declared asset directory exists,
+every screen keeps the shared Home+Mute skeleton, and destructive actions stay
+behind the parent gate.
+
+**Status: not release-ready.** 8 test files / 110 cases are written and the
+static review is clean, but `flutter pub get · analyze · test · run` have never
+been executed anywhere — see [docs/final-qa-report.md](docs/final-qa-report.md)
+and [docs/verification.md](docs/verification.md).
+
 ### Motion (Phase 2.3)
 
 ```
@@ -112,7 +138,7 @@ lib/core/animations/
   card, and the repository/notifier are read *before* the first `await`, so the
   write still lands if the child leaves mid-celebration. Nothing is ever
   disabled while things animate. If a capture is ever lost, the album repairs
-  that design from its recipe (max 2 repairs per visit).
+  that design from its recipe (a capped, staggered repair pass in the album).
 * Details, timings and **the tests that were NOT run** are in
   [docs/motion-report.md](docs/motion-report.md).
 
@@ -246,15 +272,15 @@ assets/images/characters/{kitty,bunny,panda,unicorn,fairy,kid}.png
 assets/images/tools/{sponge,soap,towel,cream,brush,water}.png
 assets/images/stickers/{star,heart,...,butterfly}.png
 assets/images/{hand_dirty,hand_clean}.png
-assets/sounds/{tap,success,sparkle,bubble,pop,water,brush,victory,applause,music_loop}.mp3
-assets/animations/sparkle.json
 assets/fonts/Fredoka-*.ttf        # then uncomment the fonts block in pubspec.yaml
 ```
 
 Notes:
 
-- **Sound paths have no `assets/` prefix** (`AssetSource('sounds/tap.mp3')`
+- **Sound paths have no `assets/` prefix** (`AssetSource('audio/sfx/tap.mp3')`
   resolves inside `assets/` automatically). This was a bug in the original draft.
+- There is **no animation file slot**: every sparkle, badge and confetti burst is
+  drawn in code (`lib/core/animations/`), so nothing extra is downloaded or parsed.
 - Missing assets **never crash the game** — audio stays silent, images fall back
   to a friendly placeholder.
 - **Fonts are bundled, not downloaded.** `google_fonts` was removed on purpose:

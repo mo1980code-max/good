@@ -7,15 +7,14 @@ import 'package:go_router/go_router.dart';
 import '../../core/animations/celebration.dart';
 import '../../core/animations/entrances.dart';
 import '../../core/animations/motion_policy.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/audio/sound_helper.dart';
 import '../../data/models/nail_item_model.dart';
 import '../../features/game/game_providers.dart';
 import '../../features/game/progress_controller.dart';
 import '../../widgets/big_button.dart';
 import '../../widgets/counter_pill.dart';
-import '../../widgets/design_preview.dart';
 import '../../widgets/kid_screen.dart';
 import '../../widgets/motion.dart';
 

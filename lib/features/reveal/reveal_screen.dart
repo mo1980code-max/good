@@ -7,18 +7,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:screenshot/screenshot.dart';
 
+import '../../core/achievements/achievement.dart';
 import '../../core/animations/celebration.dart';
 import '../../core/animations/entrances.dart';
 import '../../core/animations/motion_policy.dart';
 import '../../core/animations/motion_tokens.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/feedback_helper.dart';
-import '../../core/audio/sound_helper.dart';
 import '../../data/models/character_model.dart';
 import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
-import '../../core/achievements/achievement.dart';
 import '../../data/repositories/design_saver.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
@@ -76,9 +76,17 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     unawaited(SoundHelper.applause());
     FeedbackHelper.celebrate();
 
-    // 1) Save first, decorate later: kicks off on the very first frame.
+    // 1) Two independent jobs, both starting on the very first frame:
+    //    * the save (its own durable, provider-free path), and
+    //    * the badge check — deliberately NOT tied to the capture, so a device
+    //      where the screenshot fails still celebrates a game achievement.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_saveDesign());
+      try {
+        _celebrateAchievements();
+      } catch (_) {
+        // The star wall re-evaluates on its next visit; nothing is lost.
+      }
     });
 
     // 2) Decorative beats only.
@@ -140,11 +148,6 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
         setState(() => _saved = true);
         unawaited(SoundHelper.sparkle());
         if (manual) _toast(Icons.check_rounded);
-        try {
-          _celebrateAchievements();
-        } catch (_) {
-          // Badges are re-evaluated on the next reveal / star-wall visit.
-        }
       }
     } finally {
       _captureRunning = false;

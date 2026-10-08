@@ -30,6 +30,16 @@ class SafeAssetImage extends StatelessWidget {
   final double fallbackRadius;
   final String? semanticLabel;
 
+  /// Never decode a 2000-px file to paint a 120-px badge: the image cache
+  /// gets exactly the pixels the screen needs (one copy per size, not per
+  /// widget), which is what keeps the album and the reveal smooth on phones.
+  int? _cacheSide(BuildContext context, double? logical) {
+    if (logical == null || logical <= 0) return null;
+    final double scale = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 1.0;
+    final int pixels = (logical * scale).ceil();
+    return pixels <= 0 ? null : pixels;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Image.asset(
@@ -37,6 +47,8 @@ class SafeAssetImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      cacheWidth: _cacheSide(context, width),
+      cacheHeight: _cacheSide(context, height),
       semanticLabel: semanticLabel,
       filterQuality: FilterQuality.medium,
       errorBuilder: (context, error, stackTrace) => _Fallback(

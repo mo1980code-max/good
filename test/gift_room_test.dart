@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sparkle_nail_spa/core/gift_rooms/gift_room.dart';
 import 'package:sparkle_nail_spa/core/gift_rooms/gift_room_engine.dart';
-import 'package:sparkle_nail_spa/data/models/progress_state.dart';
 import 'package:sparkle_nail_spa/data/models/nail_item_model.dart';
+import 'package:sparkle_nail_spa/data/models/progress_state.dart';
 import 'package:sparkle_nail_spa/data/models/round_state.dart';
 import 'package:sparkle_nail_spa/data/repositories/local_storage_service.dart';
 import 'package:sparkle_nail_spa/features/game/game_providers.dart';
@@ -87,7 +87,7 @@ void main() {
 
   // -------------------------------------------------------------------------
   group('the engine decides, not the widget', () {
-    final Set<String> none = <String>{};
+    const Set<String> none = <String>{};
 
     test('a box in a room that is still far away is "roomLocked"', () {
       expect(

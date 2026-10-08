@@ -26,15 +26,13 @@ dependencies:
   audioplayers: ^6.1.0
 
   # --- Motion & celebration ---
+  # (No lottie: every celebration is drawn in code, so nothing has to be
+  #  downloaded or parsed at runtime. Phase 2.6 review.)
   flutter_animate: ^4.5.0
   confetti: ^0.8.0
-  lottie: ^3.1.2
 
   # --- Capture the finished design as a PNG ---
   screenshot: ^3.0.0
-
-  # --- Icons ---
-  flutter_svg: ^2.0.16
 
 dev_dependencies:
   flutter_test:
@@ -53,7 +51,6 @@ flutter:
     - assets/images/rooms/
     - assets/audio/sfx/
     - assets/audio/music/
-    - assets/animations/
 
   # Offline fonts (no runtime download, no network — see GDD section 12).
   # 1. Drop Fredoka TTFs into assets/fonts/

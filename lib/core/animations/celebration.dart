@@ -31,7 +31,7 @@ class _GlowHaloState extends ConsumerState<GlowHalo>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: MotionTokens.breathe,
-  )..repeat(reverse: true);
+  );
 
   @override
   void dispose() {
@@ -42,6 +42,7 @@ class _GlowHaloState extends ConsumerState<GlowHalo>
   @override
   Widget build(BuildContext context) {
     final MotionPolicy policy = MotionPolicy.of(context, ref);
+    syncLoopTicker(_controller, run: !policy.reduceMotion, reverse: true);
     if (policy.reduceMotion) return widget.child;
 
     return AnimatedBuilder(
@@ -173,7 +174,7 @@ class _BoxWiggleState extends ConsumerState<BoxWiggle>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
-  )..repeat();
+  );
 
   @override
   void dispose() {
@@ -184,6 +185,7 @@ class _BoxWiggleState extends ConsumerState<BoxWiggle>
   @override
   Widget build(BuildContext context) {
     final MotionPolicy policy = MotionPolicy.of(context, ref);
+    syncLoopTicker(_controller, run: !policy.reduceMotion);
     if (policy.reduceMotion) return widget.child;
 
     return AnimatedBuilder(
