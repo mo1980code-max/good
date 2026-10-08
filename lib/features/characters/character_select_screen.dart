@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../art/art_or_fallback.dart';
+import '../../core/animations/entrances.dart';
+import '../../core/animations/motion_tokens.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/audio/sound_helper.dart';
@@ -45,25 +46,31 @@ class CharacterSelectScreen extends ConsumerWidget {
                   crossAxisSpacing: 12,
                   childAspectRatio: 0.86,
                   children: <Widget>[
-                    for (final CharacterModel character in CharacterModel.all)
-                      Center(
-                        child: OptionTile(
-                          size: tile,
-                          selected: character.id == selectedId,
-                          accent: character.accent,
-                          semanticLabel: character.name,
-                          onTap: () {
-                            ref
-                                .read(roundControllerProvider.notifier)
-                                .startRound(character.id);
-                            SoundHelper.success();
-                          },
-                          child: CharacterArt(
-                            character: character,
-                            size: faceSize,
-                            mood: character.id == selectedId
-                                ? FaceMood.happy
-                                : FaceMood.calm,
+                    for (int i = 0;
+                        i < CharacterModel.all.length;
+                        i++)
+                      EntranceItem(
+                        index: i,
+                        child: Center(
+                          child: OptionTile(
+                            size: tile,
+                            selected:
+                                CharacterModel.all[i].id == selectedId,
+                            accent: CharacterModel.all[i].accent,
+                            semanticLabel: CharacterModel.all[i].name,
+                            onTap: () {
+                              ref
+                                  .read(roundControllerProvider.notifier)
+                                  .startRound(CharacterModel.all[i].id);
+                              SoundHelper.success();
+                            },
+                            child: CharacterArt(
+                              character: CharacterModel.all[i],
+                              size: faceSize,
+                              mood: CharacterModel.all[i].id == selectedId
+                                  ? FaceMood.happy
+                                  : FaceMood.calm,
+                            ),
                           ),
                         ),
                       ),
@@ -73,14 +80,18 @@ class CharacterSelectScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          BigButton(
-            icon: Icons.auto_awesome_rounded,
-            label: 'Start',
-            onPressed: () {
-              SoundHelper.sparkle();
-              context.go(AppRoutes.spa);
-            },
-          ).animate().slideY(begin: 0.4, end: 0).fadeIn(duration: 300.ms),
+          EntranceItem(
+            index: 1,
+            curve: MotionTokens.bounce,
+            child: BigButton(
+              icon: Icons.auto_awesome_rounded,
+              label: 'Start',
+              onPressed: () {
+                SoundHelper.sparkle();
+                context.go(AppRoutes.spa);
+              },
+            ),
+          ),
         ],
       ),
     );

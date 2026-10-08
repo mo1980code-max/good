@@ -3,11 +3,14 @@ import 'dart:typed_data';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:screenshot/screenshot.dart';
 
+import '../../core/animations/celebration.dart';
+import '../../core/animations/entrances.dart';
+import '../../core/animations/motion_policy.dart';
+import '../../core/animations/motion_tokens.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/feedback_helper.dart';
@@ -17,15 +20,25 @@ import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
 import '../../data/repositories/gallery_repository.dart';
 import '../../features/game/game_providers.dart';
-import '../../features/game/progress_controller.dart';
 import '../../widgets/big_button.dart';
 import '../../widgets/character_face.dart';
 import '../../widgets/counter_pill.dart';
 import '../../widgets/design_preview.dart';
 import '../../widgets/kid_screen.dart';
 
-/// Reveal — the ten-second celebration: confetti, applause, three stars,
-/// and the finished design is captured automatically into the album.
+/// Reveal — the ten-second celebration.
+///
+/// Choreography (all of it decorative):
+///   0.0 s  the finished design appears
+///   0.4 s  a soft glow starts breathing around it
+///   0.6 s  confetti bursts
+///   0.9 s  three stars pop in one after another
+///   ~1 s   the "saved" badge appears — **when the file write actually
+///          finishes**, not on a timer
+///
+/// The save itself is deliberately independent of all of the above: it starts
+/// on the very first frame, keeps running if the child leaves, and the buttons
+/// are never disabled while things animate.
 class RevealScreen extends ConsumerStatefulWidget {
   const RevealScreen({super.key});
 
@@ -34,87 +47,129 @@ class RevealScreen extends ConsumerStatefulWidget {
 }
 
 class _RevealScreenState extends ConsumerState<RevealScreen> {
+  /// Only wraps the design card, so the captured PNG is always clean.
+  final ScreenshotController _shot = ScreenshotController();
+
   late final ConfettiController _confetti = ConfettiController(
     duration: const Duration(seconds: 3),
   );
-  final ScreenshotController _shot = ScreenshotController();
 
-  bool _autoSaved = false;
-  bool _busy = false;
+  final List<Timer> _timers = <Timer>[];
+
   GalleryItem? _item;
+  bool _saved = false;
+  bool _captureRunning = false;
+  int _captureAttempts = 0;
 
   @override
   void initState() {
     super.initState();
 
-    _confetti.play();
-    unawaited(SoundHelper.applause());
-    unawaited(SoundHelper.victory());
-    FeedbackHelper.celebrate();
-
     final List<GalleryItem> gallery =
         ref.read(progressControllerProvider).gallery;
     _item = gallery.isEmpty ? null : gallery.first;
 
-    // The album entry is written even if the child never taps "save".
+    // Celebrate right away (audio never waits for animation frames).
+    unawaited(SoundHelper.victory());
+    unawaited(SoundHelper.applause());
+    FeedbackHelper.celebrate();
+
+    // 1) Save first, decorate later: kicks off on the very first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_autoSave());
+      unawaited(_saveDesign());
     });
+
+    // 2) Decorative beats only.
+    _timers.add(Timer(MotionTokens.confettiBegin, _burstConfetti));
+    _timers.add(
+      Timer(MotionTokens.starsBegin, () {
+        if (!mounted) return;
+        unawaited(SoundHelper.success());
+      }),
+    );
   }
 
   @override
   void dispose() {
+    for (final Timer timer in _timers) {
+      timer.cancel();
+    }
     _confetti.dispose();
     super.dispose();
   }
 
-  Future<void> _autoSave() async {
-    if (_autoSaved) return;
-    _autoSaved = true;
+  // --- Saving (independent from the celebration) ---------------------------
 
-    // Let the entrance animation settle so the capture is clean.
-    await Future<void>.delayed(const Duration(milliseconds: 1100));
-    if (!mounted) return;
-    await _captureAndStore(announce: false);
-  }
+  Future<void> _saveDesign({bool manual = false}) async {
+    if (_captureRunning) return;
 
-  /// Captures the design card and stores the PNG on the device.
-  Future<void> _captureAndStore({required bool announce}) async {
-    final GalleryItem? item = _item ?? _firstItem();
+    final GalleryItem? item = _item ?? _latestItem();
     if (item == null) return;
 
-    if (_busy) return;
-    _busy = true;
-    if (announce) setState(() {});
+    // Read the dependencies BEFORE the first await: after the screen is
+    // disposed this state object is gone, but the write must still land.
+    final GalleryRepository repository = ref.read(galleryRepositoryProvider);
+    final ProgressController progress =
+        ref.read(progressControllerProvider.notifier);
 
+    _captureRunning = true;
     try {
       final Uint8List? bytes = await _shot.capture(pixelRatio: 2.5);
-      if (bytes == null) return;
+      if (bytes == null || bytes.isEmpty) {
+        _scheduleRetry(manual: manual);
+        return;
+      }
 
-      final GalleryRepository repository = ref.read(galleryRepositoryProvider);
       final String? fileName = await repository.saveDesignImage(
         bytes,
         designId: item.id,
       );
 
-      ref
-          .read(progressControllerProvider.notifier)
-          .attachImage(item.id, fileName);
-
-      if (announce && mounted) {
-        SoundHelper.sparkle();
-        _toast(fileName != null ? Icons.check_rounded : Icons.error_rounded);
+      if (fileName == null) {
+        _scheduleRetry(manual: manual);
+        return;
       }
+
+      // Persist the file name on the album entry (safe even if unmounted).
+      progress.attachImage(item.id, fileName);
+
+      if (mounted) {
+        setState(() => _saved = true);
+        unawaited(SoundHelper.sparkle());
+        if (manual) _toast(Icons.check_rounded);
+      }
+    } catch (_) {
+      _scheduleRetry(manual: manual);
     } finally {
-      _busy = false;
-      if (mounted && announce) setState(() {});
+      _captureRunning = false;
     }
   }
 
-  GalleryItem? _firstItem() {
+  void _scheduleRetry({required bool manual}) {
+    if (_captureAttempts >= 3) {
+      if (manual && mounted) _toast(Icons.error_rounded);
+      return;
+    }
+    _captureAttempts++;
+    _timers.add(
+      Timer(Duration(milliseconds: 350 * _captureAttempts), () {
+        // The album screen can also repair a missing image later, so a total
+        // failure here still never loses the design (it is stored as a recipe).
+        unawaited(_saveDesign(manual: manual));
+      }),
+    );
+  }
+
+  GalleryItem? _latestItem() {
     final List<GalleryItem> gallery =
         ref.read(progressControllerProvider).gallery;
     return gallery.isEmpty ? null : gallery.first;
+  }
+
+  void _burstConfetti() {
+    if (!mounted) return;
+    if (MotionPolicy.of(context, ref).reduceMotion) return;
+    _confetti.play();
   }
 
   void _toast(IconData icon) {
@@ -134,10 +189,13 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     );
   }
 
+  // --- UI ------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final CharacterModel character = ref.watch(selectedCharacterProvider);
-    final GalleryItem? item = _item ?? _firstItem();
+    final GalleryItem? item = _item ?? _latestItem();
+    final MotionPolicy policy = MotionPolicy.of(context, ref);
 
     return KidScreen(
       roomId: 'reveal',
@@ -148,52 +206,60 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
       sparkles: false,
       body: Stack(
         children: <Widget>[
-          Positioned(
-            top: -20,
-            left: 0,
-            right: 0,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confetti,
-                blastDirectionality: BlastDirectionality.explosive,
-                numberOfParticles: 22,
-                emissionFrequency: 0.03,
-                gravity: 0.18,
-                colors: AppColors.rainbow,
-                shouldLoop: false,
+          if (!policy.reduceMotion)
+            Positioned(
+              top: -20,
+              left: 0,
+              right: 0,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confetti,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  numberOfParticles: 22,
+                  emissionFrequency: 0.03,
+                  gravity: 0.18,
+                  colors: AppColors.rainbow,
+                  shouldLoop: false,
+                ),
               ),
             ),
-          ),
           Column(
             children: <Widget>[
               Expanded(
                 child: Stack(
                   children: <Widget>[
+                    // 1) The design, wrapped in its glow (2).
                     Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.75),
-                          borderRadius: BorderRadius.circular(34),
-                          border:
-                              Border.all(color: AppColors.white, width: 3),
-                        ),
-                        child: Screenshot(
-                          controller: _shot,
-                          child: DesignPreview(
-                            shape: NailShape.fromId(item?.shapeId),
-                            colorOption: item == null
-                                ? null
-                                : NailCatalog.colorById(item.colorId),
-                            pattern: item == null
-                                ? null
-                                : NailCatalog.patternById(item.patternId),
-                            sticker: item == null
-                                ? null
-                                : NailCatalog.stickerById(item.stickerId),
-                            ring: item == null
-                                ? null
-                                : NailCatalog.ringById(item.ringId),
+                      child: PopIn(
+                        child: GlowHalo(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.white.withValues(alpha: 0.78),
+                              borderRadius: BorderRadius.circular(34),
+                              border: Border.all(
+                                color: AppColors.white,
+                                width: 3,
+                              ),
+                            ),
+                            child: Screenshot(
+                              controller: _shot,
+                              child: DesignPreview(
+                                shape: NailShape.fromId(item?.shapeId),
+                                colorOption: item == null
+                                    ? null
+                                    : NailCatalog.colorById(item.colorId),
+                                pattern: item == null
+                                    ? null
+                                    : NailCatalog.patternById(item.patternId),
+                                sticker: item == null
+                                    ? null
+                                    : NailCatalog.stickerById(item.stickerId),
+                                ring: item == null
+                                    ? null
+                                    : NailCatalog.ringById(item.ringId),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -201,115 +267,114 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                     Positioned(
                       left: 6,
                       top: 6,
-                      child: CharacterFace(
-                        character: character,
-                        size: 80,
-                        mood: FaceMood.amazed,
+                      child: EntranceItem(
+                        child: CharacterFace(
+                          character: character,
+                          size: 80,
+                          mood: FaceMood.amazed,
+                        ),
+                      ),
+                    ),
+                    // Real save status, not a scripted delay.
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: SavedBadge(visible: _saved),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 3) Stars pop in one after the other.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  for (int i = 0; i < MotionTokens.starCount; i++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: StarPop(index: i),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              EntranceItem(
+                index: 1,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    CounterPill(
+                      icon: Icons.star_rounded,
+                      value: ref.watch(
+                        progressControllerProvider.select((p) => p.stars),
+                      ),
+                      color: AppColors.yellow,
+                      size: 42,
+                    ),
+                    const SizedBox(width: 10),
+                    CounterPill(
+                      icon: Icons.monetization_on_rounded,
+                      value: ref.watch(
+                        progressControllerProvider.select((p) => p.coins),
+                      ),
+                      color: AppColors.mint,
+                      size: 42,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Buttons stay tappable the whole time (never disabled by an
+              // animation or by the capture running in the background).
+              EntranceItem(
+                index: 2,
+                child: BigButton(
+                  icon: _saved ? Icons.check_rounded : Icons.save_rounded,
+                  label: 'Save',
+                  color: AppColors.yellow,
+                  height: 78,
+                  onPressed: () => unawaited(_saveDesign(manual: true)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              EntranceItem(
+                index: 3,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: BigButton(
+                        icon: Icons.replay_rounded,
+                        label: 'Again',
+                        color: AppColors.pink,
+                        height: 74,
+                        onPressed: () => context.go(AppRoutes.characters),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: BigButton(
+                        icon: Icons.photo_library_rounded,
+                        label: 'Album',
+                        color: AppColors.mint,
+                        height: 74,
+                        onPressed: () => context.go(AppRoutes.gallery),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
-              const _StarsRow(),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  CounterPill(
-                    icon: Icons.star_rounded,
-                    value: ref.watch(
-                      progressControllerProvider.select((p) => p.stars),
-                    ),
-                    color: AppColors.yellow,
-                    size: 42,
-                  ),
-                  const SizedBox(width: 10),
-                  CounterPill(
-                    icon: Icons.monetization_on_rounded,
-                    value: ref.watch(
-                      progressControllerProvider.select((p) => p.coins),
-                    ),
-                    color: AppColors.mint,
-                    size: 42,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              BigButton(
-                icon: _busy ? Icons.hourglass_top_rounded : Icons.save_rounded,
-                label: 'Save',
-                color: AppColors.yellow,
-                height: 80,
-                enabled: !_busy,
-                onPressed: () => _captureAndStore(announce: true),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: BigButton(
-                      icon: Icons.replay_rounded,
-                      label: 'Again',
-                      color: AppColors.pink,
-                      height: 76,
-                      onPressed: () => context.go(AppRoutes.characters),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: BigButton(
-                      icon: Icons.photo_library_rounded,
-                      label: 'Album',
-                      color: AppColors.mint,
-                      height: 76,
-                      onPressed: () => context.go(AppRoutes.gallery),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              BigButton(
-                icon: Icons.home_rounded,
-                height: 70,
-                onPressed: () => context.go(AppRoutes.home),
+              EntranceItem(
+                index: 4,
+                child: BigButton(
+                  icon: Icons.home_rounded,
+                  height: 68,
+                  onPressed: () => context.go(AppRoutes.home),
+                ),
               ),
             ],
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Three stars that pop in one after the other.
-class _StarsRow extends StatelessWidget {
-  const _StarsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        for (int i = 0; i < 3; i++)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: const Icon(
-              Icons.star_rounded,
-              color: AppColors.yellow,
-              size: 46,
-            )
-                .animate()
-                .fadeIn(delay: (200 * i).ms, duration: 250.ms)
-                .scale(
-                  delay: (200 * i).ms,
-                  duration: 500.ms,
-                  begin: const Offset(0.2, 0.2),
-                  end: const Offset(1, 1),
-                  curve: Curves.elasticOut,
-                ),
-          ),
-      ],
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/router/app_routes.dart';
+import '../core/animations/motion_policy.dart';
 import '../core/theme/app_colors.dart';
 import '../features/game/game_providers.dart';
 
@@ -40,10 +41,8 @@ class _IdleBreatheState extends ConsumerState<IdleBreathe>
 
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion =
-        ref.watch(settingsControllerProvider.select((s) => s.reduceMotion));
-
-    if (reduceMotion) return widget.child;
+    // Calmed by either the in-game toggle or the system setting.
+    if (MotionPolicy.of(context, ref).reduceMotion) return widget.child;
 
     return ScaleTransition(
       scale: Tween<double>(begin: 1, end: widget.scale).animate(
@@ -105,9 +104,9 @@ class _SparkleBurstState extends ConsumerState<SparkleBurst>
 
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion =
-        ref.watch(settingsControllerProvider.select((s) => s.reduceMotion));
-    if (reduceMotion) return const SizedBox.shrink();
+    if (MotionPolicy.of(context, ref).reduceMotion) {
+      return const SizedBox.shrink();
+    }
 
     return IgnorePointer(
       child: AnimatedBuilder(
@@ -221,8 +220,7 @@ class _HintHandState extends ConsumerState<HintHand>
 
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion =
-        ref.watch(settingsControllerProvider.select((s) => s.reduceMotion));
+    final bool reduceMotion = MotionPolicy.of(context, ref).reduceMotion;
 
     return IgnorePointer(
       child: AnimatedBuilder(

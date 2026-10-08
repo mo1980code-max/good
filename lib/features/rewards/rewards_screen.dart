@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/animations/celebration.dart';
+import '../../core/animations/entrances.dart';
+import '../../core/animations/motion_policy.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/audio/sound_helper.dart';
@@ -63,13 +65,16 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       ),
       body: Column(
         children: <Widget>[
-          _StreakRow(streak: streak),
+          EntranceItem(child: _StreakRow(streak: streak)),
           const SizedBox(height: 10),
           Expanded(
-            child: _GiftCard(
-              canClaim: canClaim,
-              busy: _busy,
-              onOpen: _claimDailyGift,
+            child: EntranceItem(
+              index: 1,
+              child: _GiftCard(
+                canClaim: canClaim,
+                busy: _busy,
+                onOpen: _claimDailyGift,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -196,28 +201,8 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              IdleBreathe(
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: <Color>[color, AppColors.white],
-                    ),
-                  ),
-                  child: Icon(icon, size: 64, color: AppColors.white),
-                ),
-              )
-                  .animate()
-                  .scale(
-                    duration: 600.ms,
-                    curve: Curves.elasticOut,
-                    begin: const Offset(0.3, 0.3),
-                    end: const Offset(1, 1),
-                  )
-                  .then()
-                  .shake(duration: 600.ms),
+              // The box wiggles, then the prize pops out of it.
+              _PrizeReveal(icon: icon, color: color),
               const SizedBox(height: 14),
               if (badge)
                 const Row(
@@ -340,6 +325,74 @@ class _GiftCard extends StatelessWidget {
             enabled: canClaim && !busy,
             onPressed: onOpen,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Box first, prize second — and nothing at all when motion is calmed.
+class _PrizeReveal extends ConsumerStatefulWidget {
+  const _PrizeReveal({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  ConsumerState<_PrizeReveal> createState() => _PrizeRevealState();
+}
+
+class _PrizeRevealState extends ConsumerState<_PrizeReveal> {
+  bool _opened = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Short, gentle beat: the child sees the box before the gift.
+    Future<void>.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) setState(() => _opened = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool calm = MotionPolicy.of(context, ref).reduceMotion;
+
+    final Widget prize = Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: <Color>[widget.color, AppColors.white],
+        ),
+      ),
+      child: Icon(widget.icon, size: 64, color: AppColors.white),
+    );
+
+    if (calm) return prize;
+
+    return SizedBox(
+      width: 140,
+      height: 140,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          if (!_opened)
+            BoxWiggle(
+              child: const Icon(
+                Icons.card_giftcard_rounded,
+                size: 112,
+                color: AppColors.pink,
+              ),
+            ),
+          if (_opened)
+            PopIn(
+              child: GlowHalo(
+                color: widget.color,
+                child: prize,
+              ),
+            ),
         ],
       ),
     );

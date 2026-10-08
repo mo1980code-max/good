@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/animations/entrances.dart';
+import '../../core/animations/motion_tokens.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/audio/sound_helper.dart';
@@ -93,10 +95,17 @@ class NailStudioScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           SizedBox(
             height: 108,
-            child: _StepOptions(
-              round: round,
-              progress: progress,
-              controller: controller,
+            // Steps slide in gently; the live preview above never blinks.
+            child: AnimatedSwitcher(
+              duration: MotionTokens.screenTransition,
+              switchInCurve: MotionTokens.soft,
+              switchOutCurve: MotionTokens.gentle,
+              child: _StepOptions(
+                key: ValueKey<int>(round.studioStep),
+                round: round,
+                progress: progress,
+                controller: controller,
+              ),
             ),
           ),
           const SizedBox(height: 8),

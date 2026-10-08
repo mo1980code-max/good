@@ -17,11 +17,38 @@ just big friendly buttons, sparkles and happy sounds.
 | **Phase 1 — Screens** | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | ✅ done |
 | **Phase 2.1 — Art & theme** | replaceable art layer, room backdrops, tablet layout, 7 real art assets | ✅ **done (this revision)** |
 | **Phase 2.2 — Audio** | `lib/core/audio/` engine + 11 real MP3 files (410 KB) | ✅ **done (this revision)** |
-| Phase 2.3 — Motion | screen transitions, reveal choreography, celebrations | 🕐 |
+| **Phase 2.3 — Motion** | shared motion engine, 9 screen entrances, full reveal choreography | ✅ **done (this revision)** |
 | Phase 2.4 — Achievements | star wall, badges, streak rewards | 🕐 |
 | Phase 2.5 — Gift rooms | surprise boxes, unlockable themes | 🕐 |
 | Phase 2.6 — Hardening | tests, performance, final polish | 🕐 |
 | Phase 3 — Release | device testing, store screenshots, privacy policy, age rating | 🕐 |
+
+### Motion (Phase 2.3)
+
+```
+lib/core/animations/
+  motion_tokens.dart       every duration/curve in one place (locked by tests)
+  motion_policy.dart       "calm motion" = app toggle OR the system setting
+  screen_transitions.dart  softPage(): the single transition every route uses
+  entrances.dart           ScreenEntrance, EntranceItem (staggered), PopIn
+  celebration.dart         GlowHalo, StarPop, SavedBadge, BoxWiggle
+```
+
+* Durations follow the brief and are **asserted by tests**: transitions 340 ms,
+  entrances 420/560 ms, selection 180 ms, reveal 2600 ms, ambient loops 2.4-3 s.
+* Calm motion is honoured from **two** sources: the in-game toggle *and*
+  `MediaQuery.disableAnimations` (Android "Remove animations", iOS "Reduce
+  Motion"). When calmed, entrances collapse, distances become zero and all
+  looping decorations stop — which is also what protects the battery.
+* Off-screen routes cost nothing: Flutter mutes their tickers via `TickerMode`.
+* **Reveal is choreographed, the save is not.** The PNG capture starts on the
+  very first frame (before any animation), the screenshot wraps only the design
+  card, and the repository/notifier are read *before* the first `await`, so the
+  write still lands if the child leaves mid-celebration. Nothing is ever
+  disabled while things animate. If a capture is ever lost, the album repairs
+  that design from its recipe (max 2 repairs per visit).
+* Details, timings and **the tests that were NOT run** are in
+  [docs/motion-report.md](docs/motion-report.md).
 
 ### Audio (Phase 2.2)
 
@@ -123,7 +150,7 @@ flutter run
 ### Tests
 
 ```bash
-flutter test          # pure logic: models, save-data parsing, catalog maths
+flutter test          # pure logic: models, save parsing, catalog maths, motion rules
 ```
 
 > ⚠️ **Nothing has been analysed or run yet** — the working environment has no

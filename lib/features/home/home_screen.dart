@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../art/art_or_fallback.dart';
+import '../../core/animations/entrances.dart';
+import '../../core/animations/motion_tokens.dart';
 import '../../core/constants/assets.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
@@ -122,7 +123,8 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return EntranceItem(
+      child: Column(
       children: <Widget>[
         IdleBreathe(
           child: SafeAssetImage(
@@ -132,15 +134,7 @@ class _Greeting extends StatelessWidget {
             fallbackIcon: Icons.auto_awesome_rounded,
             fallbackColor: AppColors.pink,
           ),
-        )
-            .animate()
-            .fadeIn(duration: 400.ms)
-            .scale(
-              begin: const Offset(0.7, 0.7),
-              end: const Offset(1, 1),
-              duration: 600.ms,
-              curve: Curves.elasticOut,
-            ),
+        ),
         const SizedBox(height: 2),
         const Text(
           'Sparkle Nail Spa',
@@ -166,7 +160,8 @@ class _Greeting extends StatelessWidget {
           ),
         ),
       ],
-    ).animate().fadeIn(delay: 150.ms, duration: 400.ms);
+      ),
+    );
   }
 }
 
@@ -177,40 +172,45 @@ class _Doors extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        BigButton(
-          icon: Icons.play_arrow_rounded,
-          label: 'Play',
-          height: 96,
-          iconSize: 44,
-          onPressed: () => context.go(AppRoutes.characters),
-        ).animate().slideY(begin: 0.35, end: 0).fadeIn(duration: 350.ms),
+        EntranceItem(
+          index: 0,
+          curve: MotionTokens.bounce,
+          child: BigButton(
+            icon: Icons.play_arrow_rounded,
+            label: 'Play',
+            height: 96,
+            iconSize: 44,
+            onPressed: () => context.go(AppRoutes.characters),
+          ),
+        ),
         const SizedBox(height: 12),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: BigButton(
-                icon: Icons.photo_library_rounded,
-                label: 'Album',
-                color: AppColors.pink,
-                height: 84,
-                onPressed: () => context.go(AppRoutes.gallery),
+        EntranceItem(
+          index: 1,
+          curve: MotionTokens.bounce,
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: BigButton(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Album',
+                  color: AppColors.pink,
+                  height: 84,
+                  onPressed: () => context.go(AppRoutes.gallery),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: BigButton(
-                icon: Icons.card_giftcard_rounded,
-                label: 'Gifts',
-                color: AppColors.mint,
-                height: 84,
-                onPressed: () => context.go(AppRoutes.rewards),
+              const SizedBox(width: 12),
+              Expanded(
+                child: BigButton(
+                  icon: Icons.card_giftcard_rounded,
+                  label: 'Gifts',
+                  color: AppColors.mint,
+                  height: 84,
+                  onPressed: () => context.go(AppRoutes.rewards),
+                ),
               ),
-            ),
-          ],
-        )
-            .animate()
-            .slideY(begin: 0.35, end: 0, delay: 100.ms)
-            .fadeIn(delay: 100.ms, duration: 350.ms),
+            ],
+          ),
+        ),
       ],
     );
   }

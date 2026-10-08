@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:screenshot/screenshot.dart';
 
+import '../../core/animations/entrances.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/parent_gate.dart';
@@ -9,6 +14,7 @@ import '../../core/utils/responsive.dart';
 import '../../core/audio/sound_helper.dart';
 import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
+import '../../data/repositories/gallery_repository.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
 import '../../widgets/counter_pill.dart';
@@ -46,21 +52,52 @@ class GalleryScreen extends ConsumerWidget {
                 childAspectRatio: 0.80,
               ),
               itemBuilder: (context, index) {
-                return _DesignCard(item: gallery[index]);
+                return EntranceItem(
+                  index: index,
+                  // Only the first cards may repair in one visit, so the
+                  // device is never asked to re-render a whole album.
+                  child: _DesignCard(
+                    item: gallery[index],
+                    allowRepair: index < 2,
+                  ),
+                );
               },
             ),
     );
   }
 }
 
-class _DesignCard extends ConsumerWidget {
-  const _DesignCard({required this.item});
+class _DesignCard extends ConsumerStatefulWidget {
+  const _DesignCard({required this.item, this.allowRepair = false});
 
   final GalleryItem item;
 
+  /// Set for the first cards: a design whose PNG is missing (capture failed on
+  /// the reveal screen, or the app was closed mid-save) is re-captured here
+  /// from its recipe — the album heals itself, nothing is ever lost.
+  final bool allowRepair;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
+  ConsumerState<_DesignCard> createState() => _DesignCardState();
+}
+
+class _DesignCardState extends ConsumerState<_DesignCard> {
+  final ScreenshotController _repairShot = ScreenshotController();
+  bool _requested = false;
+
+  GalleryItem get item => widget.item;
+
+  bool get _needsRepair => widget.allowRepair && item.imageFileName == null;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool repairing = _needsRepair;
+    if (repairing && !_requested) {
+      _requested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _repair());
+    }
+
+    final Widget card = GestureDetector(
       onLongPress: () => _confirmDelete(context, ref),
       child: Container(
         decoration: BoxDecoration(
@@ -85,6 +122,32 @@ class _DesignCard extends ConsumerWidget {
         ),
       ),
     );
+
+    return repairing
+        ? Screenshot(controller: _repairShot, child: card)
+        : card;
+  }
+
+  Future<void> _repair() async {
+    if (!_needsRepair) return;
+
+    final GalleryRepository repository = ref.read(galleryRepositoryProvider);
+    final ProgressController progress =
+        ref.read(progressControllerProvider.notifier);
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      final Uint8List? bytes = await _repairShot.capture(pixelRatio: 2.5);
+      if (bytes == null || bytes.isEmpty) return;
+
+      final String? fileName = await repository.saveDesignImage(
+        bytes,
+        designId: item.id,
+      );
+      progress.attachImage(item.id, fileName);
+    } catch (_) {
+      // Try again on the next visit — the recipe is always kept.
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {

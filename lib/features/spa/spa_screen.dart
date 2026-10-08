@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/animations/entrances.dart';
+import '../../core/animations/motion_tokens.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/feedback_helper.dart';
@@ -85,9 +86,16 @@ class SpaScreen extends ConsumerWidget {
                   children: <Widget>[
                     Padding(
                       padding: const EdgeInsets.all(18),
-                      child: HandIllustration(
-                        stage: stage,
-                        progress: round.spaProgress,
+                      // A new step cross-fades in instead of popping.
+                      child: AnimatedSwitcher(
+                        duration: MotionTokens.screenTransition,
+                        switchInCurve: MotionTokens.soft,
+                        switchOutCurve: MotionTokens.gentle,
+                        child: HandIllustration(
+                          key: ValueKey<SpaStage>(stage),
+                          stage: stage,
+                          progress: round.spaProgress,
+                        ),
                       ),
                     ),
                     // Textless hint: a hand sliding side to side until the
@@ -98,23 +106,25 @@ class SpaScreen extends ConsumerWidget {
                         alignment: Alignment.topRight,
                         child: Padding(
                           padding: EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.mint,
-                            size: 44,
+                          child: PopIn(
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.mint,
+                              size: 44,
+                            ),
                           ),
                         ),
-                      ).animate().scale(
-                            duration: 400.ms,
-                            curve: Curves.elasticOut,
-                          ),
+                      ),
                   ],
                 ),
               ),
             ),
           ),
           const SizedBox(height: 10),
-          _ToolRow(icons: _toolIcons, current: round.spaStep),
+          EntranceItem(
+            index: 1,
+            child: _ToolRow(icons: _toolIcons, current: round.spaStep),
+          ),
           const SizedBox(height: 10),
           BigButton(
             icon: round.isLastSpaStep

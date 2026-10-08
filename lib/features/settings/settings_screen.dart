@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/animations/entrances.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/parent_gate.dart';
@@ -31,63 +32,65 @@ class SettingsScreen extends ConsumerWidget {
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
       ),
       sparkles: false,
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 20),
-        children: <Widget>[
-          _ToggleRow(
-            icon: Icons.volume_up_rounded,
-            color: AppColors.sky,
-            label: 'Sound',
-            value: settings.soundOn,
-            onChanged: (bool value) {
-              controller.setSoundOn(value);
-              if (value) SoundHelper.tap();
-            },
-          ),
-          _ToggleRow(
-            icon: Icons.music_note_rounded,
-            color: AppColors.lavender,
-            label: 'Music',
-            value: settings.musicOn,
-            onChanged: controller.setMusicOn,
-          ),
-          _ToggleRow(
-            icon: Icons.vibration_rounded,
-            color: AppColors.mint,
-            label: 'Vibration',
-            value: settings.hapticsOn,
-            onChanged: controller.setHapticsOn,
-          ),
-          _ToggleRow(
-            icon: Icons.motion_photos_off_rounded,
-            color: AppColors.peach,
-            label: 'Calm motion',
-            value: settings.reduceMotion,
-            onChanged: controller.setReduceMotion,
-          ),
-          const SizedBox(height: 20),
-          BigButton(
-            icon: Icons.restart_alt_rounded,
-            label: 'Reset progress',
-            color: AppColors.peach,
-            height: 80,
-            onPressed: () => _resetProgress(context, ref),
-          ),
-          const SizedBox(height: 10),
-          BigButton(
-            icon: Icons.home_rounded,
-            height: 76,
-            onPressed: () => context.go(AppRoutes.home),
-          ),
-          const SizedBox(height: 10),
-          const Center(
-            child: Icon(
-              Icons.favorite_rounded,
-              color: AppColors.pink,
-              size: 22,
+      body: EntranceItem(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 20),
+          children: <Widget>[
+            _ToggleRow(
+              icon: Icons.volume_up_rounded,
+              color: AppColors.sky,
+              label: 'Sound',
+              value: settings.soundOn,
+              onChanged: (bool value) {
+                controller.setSoundOn(value);
+                if (value) SoundHelper.tap();
+              },
             ),
-          ),
-        ],
+            _ToggleRow(
+              icon: Icons.music_note_rounded,
+              color: AppColors.lavender,
+              label: 'Music',
+              value: settings.musicOn,
+              onChanged: controller.setMusicOn,
+            ),
+            _ToggleRow(
+              icon: Icons.vibration_rounded,
+              color: AppColors.mint,
+              label: 'Vibration',
+              value: settings.hapticsOn,
+              onChanged: controller.setHapticsOn,
+            ),
+            _ToggleRow(
+              icon: Icons.motion_photos_off_rounded,
+              color: AppColors.peach,
+              label: 'Calm motion',
+              value: settings.reduceMotion,
+              onChanged: controller.setReduceMotion,
+            ),
+            const SizedBox(height: 20),
+            BigButton(
+              icon: Icons.restart_alt_rounded,
+              label: 'Reset progress',
+              color: AppColors.peach,
+              height: 80,
+              onPressed: () => _resetProgress(context, ref),
+            ),
+            const SizedBox(height: 10),
+            BigButton(
+              icon: Icons.home_rounded,
+              height: 76,
+              onPressed: () => context.go(AppRoutes.home),
+            ),
+            const SizedBox(height: 10),
+            const Center(
+              child: Icon(
+                Icons.favorite_rounded,
+                color: AppColors.pink,
+                size: 22,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
