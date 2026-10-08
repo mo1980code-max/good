@@ -34,7 +34,7 @@ class HandIllustration extends StatelessWidget {
       child: CustomPaint(
         painter: _HandPainter(
           stage: stage,
-          progress: progress.clamp(0.0, 1.0),
+          progress: progress.clamp(0.0, 1.0).toDouble(),
           polish: polish,
         ),
         size: Size.infinite,
@@ -205,7 +205,7 @@ class _HandPainter extends CustomPainter {
   }
 
   void _paintDirt(Canvas canvas, double w, double h, {required double fade}) {
-    final double alpha = (1 - fade).clamp(0.0, 1.0);
+    final double alpha = (1 - fade).clamp(0.0, 1.0).toDouble();
     if (alpha <= 0.01) return;
 
     final Paint dirt = Paint()..color = const Color(0xFF8D6E63).withValues(alpha: alpha * 0.85);
@@ -241,7 +241,8 @@ class _HandPainter extends CustomPainter {
       Offset(0.24, 0.52),
     ];
     for (int i = 0; i < spots.length; i++) {
-      final double appear = ((amount * 1.35) - i * 0.06).clamp(0.0, 1.0);
+      final double appear =
+          ((amount * 1.35) - i * 0.06).clamp(0.0, 1.0).toDouble();
       if (appear <= 0.02) continue;
       final double radius = w * 0.055 * appear;
       final Offset center = Offset(spots[i].dx * w, spots[i].dy * h - radius);
@@ -267,7 +268,7 @@ class _HandPainter extends CustomPainter {
   }
 
   void _paintWater(Canvas canvas, double w, double h, {required double amount}) {
-    final double alpha = amount.clamp(0.0, 1.0);
+    final double alpha = amount.clamp(0.0, 1.0).toDouble();
     final Paint stream = Paint()
       ..color = AppColors.sky.withValues(alpha: 0.55 * alpha)
       ..strokeCap = StrokeCap.round
@@ -301,7 +302,8 @@ class _HandPainter extends CustomPainter {
       Offset(0.30, 0.74),
     ];
     for (int i = 0; i < spots.length; i++) {
-      final double appear = ((amount * 1.4) - i * 0.08).clamp(0.0, 1.0);
+      final double appear =
+          ((amount * 1.4) - i * 0.08).clamp(0.0, 1.0).toDouble();
       if (appear <= 0.05) continue;
       _star(
         canvas,
@@ -313,7 +315,7 @@ class _HandPainter extends CustomPainter {
   }
 
   void _paintCream(Canvas canvas, double w, double h, {required double amount}) {
-    final double alpha = amount.clamp(0.0, 1.0);
+    final double alpha = amount.clamp(0.0, 1.0).toDouble();
 
     // Glossy highlight sweeping over the palm.
     final RRect palm = RRect.fromRectAndRadius(
@@ -326,7 +328,8 @@ class _HandPainter extends CustomPainter {
     );
 
     for (int i = 0; i < 5; i++) {
-      final double appear = ((amount * 1.3) - i * 0.10).clamp(0.0, 1.0);
+      final double appear =
+          ((amount * 1.3) - i * 0.10).clamp(0.0, 1.0).toDouble();
       if (appear <= 0.05) continue;
       final Offset center = Offset(
         w * (0.30 + i * 0.10),

@@ -267,7 +267,7 @@ class _StreakRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int filled = streak.clamp(0, 7);
+    final int filled = streak.clamp(0, 7).toInt();
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[

@@ -32,7 +32,7 @@ class RoundController extends Notifier<RoundState> {
   void rub({double amount = GameConstants.spaRubPerUpdate}) {
     if (state.isSpaStepComplete) return;
     final double next = state.spaProgress + amount;
-    state = state.copyWith(spaProgress: next >= 1 ? 1 : next);
+    state = state.copyWith(spaProgress: next >= 1 ? 1.0 : next);
   }
 
   /// Finishes the current spa step. Returns false if it is not done yet.

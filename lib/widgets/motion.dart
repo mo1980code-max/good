@@ -159,7 +159,7 @@ class _SparklePainter extends CustomPainter {
     for (final _Sparkle sparkle in sparkles) {
       final double t = ((time * sparkle.speed) + sparkle.phase) % 1;
       final double wave = math.sin(t * math.pi);
-      final double alpha = (wave * opacity).clamp(0.0, 1.0);
+      final double alpha = (wave * opacity).clamp(0.0, 1.0).toDouble();
       if (alpha <= 0.02) continue;
 
       final Offset center = Offset(
@@ -175,7 +175,7 @@ class _SparklePainter extends CustomPainter {
     final Paint paint = Paint()
       ..color = color
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = (radius * 0.30).clamp(1.0, 3.5);
+      ..strokeWidth = (radius * 0.30).clamp(1.0, 3.5).toDouble();
 
     canvas.drawLine(
       center.translate(-radius, 0),

@@ -36,7 +36,7 @@ class SpaScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final RoundState round = ref.watch(roundControllerProvider);
     final SpaStage stage =
-        SpaStage.values[round.spaStep.clamp(0, SpaStage.values.length - 1)];
+        SpaStage.values[round.spaStep.clamp(0, SpaStage.values.length - 1).toInt()];
     final CharacterModel character = ref.watch(selectedCharacterProvider);
 
     // Celebrate the exact moment a step reaches 100%.

@@ -108,7 +108,7 @@ class _Fallback extends StatelessWidget {
       (null, final double h) => h,
       _ => null,
     };
-    return smallest != null ? smallest.clamp(24, 200) : radius * 2;
+    return smallest != null ? smallest.clamp(24.0, 200.0).toDouble() : radius * 2;
   }
 }
 

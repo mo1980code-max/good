@@ -57,7 +57,8 @@ class _CharacterFaceState extends State<CharacterFace>
           double openness = 1;
           if (widget.blink && t > 0.90) {
             final double blinkT = (t - 0.90) / 0.10;
-            openness = (1 - math.sin(blinkT * math.pi)).clamp(0.05, 1.0);
+            openness =
+                (1 - math.sin(blinkT * math.pi)).clamp(0.0, 1.0).toDouble();
           }
           return CustomPaint(
             painter: _FacePainter(
@@ -256,7 +257,7 @@ class _FacePainter extends CustomPainter {
       case 'fairy':
         _wings(canvas, head, r);
       case 'kid':
-        _hair(canvas, head, r, edgePaint);
+        _hair(canvas, head, r);
       default:
         _triangleEar(canvas, head, r, -1, edgePaint);
         _triangleEar(canvas, head, r, 1, edgePaint);
@@ -487,7 +488,7 @@ class _FacePainter extends CustomPainter {
     }
   }
 
-  void _hair(Canvas canvas, Offset head, double r, Color edge) {
+  void _hair(Canvas canvas, Offset head, double r) {
     final Paint hairPaint = Paint()..color = const Color(0xFF7A4B2E);
     canvas.save();
     canvas.clipPath(

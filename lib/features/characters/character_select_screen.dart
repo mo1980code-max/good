@@ -33,9 +33,9 @@ class CharacterSelectScreen extends ConsumerWidget {
               builder: (context, constraints) {
                 // Fits both a small phone and a tablet without overflowing.
                 final double tile =
-                    ((constraints.maxWidth / 2) - 16).clamp(88, 190);
+                    ((constraints.maxWidth / 2) - 16).clamp(88.0, 190.0).toDouble();
                 final double faceSize =
-                    (tile * 0.72).clamp(60, 140);
+                    (tile * 0.72).clamp(60.0, 140.0).toDouble();
 
                 return GridView.count(
                   crossAxisCount: 2,

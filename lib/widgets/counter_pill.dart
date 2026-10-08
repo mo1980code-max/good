@@ -130,7 +130,7 @@ class CuteProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double clamped = value.clamp(0.0, 1.0);
+    final double clamped = value.clamp(0.0, 1.0).toDouble();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -166,7 +166,7 @@ class CuteProgressBar extends StatelessWidget {
               ),
               if (clamped > 0.02 && clamped < 1)
                 Positioned(
-                  left: (fill - height * 0.72).clamp(0, width - height * 1.4),
+                  left: (fill - height * 0.72).clamp(0.0, width - height * 1.4).toDouble(),
                   top: 0,
                   bottom: 0,
                   child: Center(

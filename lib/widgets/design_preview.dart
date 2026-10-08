@@ -212,7 +212,7 @@ class NailSwatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final BorderRadius radius = BorderRadius.circular(
-      shape == NailShape.almond ? 999 : (shape == NailShape.round ? 18 : 8),
+      shape == NailShape.almond ? 999.0 : (shape == NailShape.round ? 18.0 : 8.0),
     );
     final bool isBare = color == DesignPreview._bare;
 

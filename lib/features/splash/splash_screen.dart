@@ -88,7 +88,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   .fadeIn(delay: 250.ms, duration: 500.ms)
                   .slideY(begin: 0.4, end: 0, curve: Curves.easeOutCubic),
               const SizedBox(height: 6),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Icon(Icons.star_rounded, color: AppColors.yellow, size: 26)
