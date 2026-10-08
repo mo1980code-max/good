@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/sound_helper.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../data/models/nail_item_model.dart';
 import '../../features/game/game_providers.dart';
 import '../../features/game/progress_controller.dart';
@@ -105,7 +105,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       if (!mounted) return;
       if (!claimed) return;
 
-      await SoundHelper.sparkle();
+      await SoundHelper.gift();
       if (!mounted) return;
       await _celebrate(
         icon: Icons.card_giftcard_rounded,
@@ -135,7 +135,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         controller.addCoins(60);
       }
 
-      await SoundHelper.sparkle();
+      await SoundHelper.gift();
       if (!mounted) return;
       await _celebrate(
         icon: prize.icon,

@@ -33,5 +33,7 @@ macos/Pods/
 # Keep shipped art/sound that is intentionally part of the game
 !assets/**/*.png
 !assets/**/*.mp3
+!assets/**/*.wav
+!assets/**/*.ogg
 !assets/**/*.json
 !assets/**/*.ttf

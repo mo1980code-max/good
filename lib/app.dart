@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/feedback_helper.dart';
-import 'core/utils/sound_helper.dart';
+import 'core/audio/sound_helper.dart';
 import 'data/models/settings_model.dart';
 import 'features/game/game_providers.dart';
 

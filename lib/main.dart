@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
-import 'core/utils/sound_helper.dart';
+import 'core/audio/sound_helper.dart';
 import 'data/repositories/local_storage_service.dart';
 
 Future<void> main() async {

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/sound_helper.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../data/models/character_model.dart';
 import '../../data/models/nail_item_model.dart';
 import '../../data/models/progress_state.dart';

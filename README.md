@@ -16,12 +16,35 @@ just big friendly buttons, sparkles and happy sounds.
 | **Phase 1 — Architecture** | models, storage, state management, routing, theme, helpers | ✅ done |
 | **Phase 1 — Screens** | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | ✅ done |
 | **Phase 2.1 — Art & theme** | replaceable art layer, room backdrops, tablet layout, 7 real art assets | ✅ **done (this revision)** |
-| Phase 2.2 — Audio engine | sound pool, throttling, real SFX files, music loop | 🕐 next |
+| **Phase 2.2 — Audio** | `lib/core/audio/` engine + 11 real MP3 files (410 KB) | ✅ **done (this revision)** |
 | Phase 2.3 — Motion | screen transitions, reveal choreography, celebrations | 🕐 |
 | Phase 2.4 — Achievements | star wall, badges, streak rewards | 🕐 |
 | Phase 2.5 — Gift rooms | surprise boxes, unlockable themes | 🕐 |
 | Phase 2.6 — Hardening | tests, performance, final polish | 🕐 |
 | Phase 3 — Release | device testing, store screenshots, privacy policy, age rating | 🕐 |
+
+### Audio (Phase 2.2)
+
+```
+lib/core/audio/
+  audio_cues.dart     cue table: path + gain + throttle per sound
+  audio_engine.dart   pre-loaded players, single music stream, burst limiter
+  sound_helper.dart   thin facade the screens talk to
+assets/audio/sfx/     10 effects      assets/audio/music/  one loop
+```
+
+* **Real files, original:** every sound is generated from scratch by
+  `tools/generate_audio.py` (`python3 tools/generate_audio.py` regenerates the
+  whole set). Peaks are all ≤ −8 dBFS and the files contain ~0% energy above
+  8 kHz — nothing piercing, nothing startling.
+* **One music stream, always:** `startMusic()` is idempotent, so moving between
+  screens can never stack two loops. Music pauses when the app is backgrounded.
+* **Anti-spam:** per-cue throttling for drag sounds plus a burst limiter
+  (max 3 sounds / 140 ms) so little hands drumming the screen stay pleasant.
+* **Never breaks:** a missing or undecodable file is caught and the cue simply
+  stays silent; the game keeps playing.
+* Measurements, design rules and **the tests that were NOT run** are recorded
+  honestly in [docs/audio-report.md](docs/audio-report.md).
 
 ### Art layer (Phase 2.1)
 
@@ -100,8 +123,16 @@ flutter run
 ### Tests
 
 ```bash
-flutter test
+flutter test          # pure logic: models, save-data parsing, catalog maths
 ```
+
+> ⚠️ **Nothing has been analysed or run yet** — the working environment has no
+> Flutter SDK, so `flutter analyze`, `flutter test` and `flutter run` are still
+> pending on a real machine. What *was* verified here: every relative import
+> resolves, no deprecated APIs are used, delimiters balance, every audio cue
+> path matches a file on disk (11/11), all MP3s carry a valid frame header, the
+> music loop seam is continuous, and no sound has harsh high-frequency energy.
+> See [docs/audio-report.md](docs/audio-report.md) §5 for the explicit list.
 
 ---
 
@@ -113,6 +144,8 @@ Drop your art/audio into `assets/` using the **exact names** listed in
 ```
 assets/images/ui/logo.png        # ✅ shipped
 assets/images/rooms/{home,spa,...}.png          # optional room backdrops
+assets/audio/sfx/*.mp3                          # ✅ shipped (10 cues)
+assets/audio/music/spa_loop.mp3                 # ✅ shipped (18.85 s loop)
 assets/images/characters/{kitty,bunny,panda,unicorn,fairy,kid}.png
 assets/images/tools/{sponge,soap,towel,cream,brush,water}.png
 assets/images/stickers/{star,heart,...,butterfly}.png

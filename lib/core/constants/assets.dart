@@ -2,7 +2,10 @@
 ///
 /// IMPORTANT — sound paths have **no** `assets/` prefix: `audioplayers`
 /// resolves `AssetSource` relative to the `assets/` folder automatically
-/// (so `'sounds/tap.mp3'` means `assets/sounds/tap.mp3`).
+/// (so `'audio/sfx/tap.mp3'` means `assets/audio/sfx/tap.mp3`).
+///
+/// Sounds live under `assets/audio/sfx/` and `assets/audio/music/`; the cue
+/// table (gains, throttles) is in `lib/core/audio/audio_cues.dart`.
 abstract final class Assets {
   // --- UI ---
   static const String logo = 'assets/images/ui/logo.png';
@@ -52,17 +55,18 @@ abstract final class Assets {
   static const String ring7 = 'assets/images/ui/ring_7.png';
   static const String ring8 = 'assets/images/ui/ring_8.png';
 
-  // --- Sounds (relative to assets/) ---
-  static const String sfxTap = 'sounds/tap.mp3';
-  static const String sfxSuccess = 'sounds/success.mp3';
-  static const String sfxSparkle = 'sounds/sparkle.mp3';
-  static const String sfxBubble = 'sounds/bubble.mp3';
-  static const String sfxPop = 'sounds/pop.mp3';
-  static const String sfxWater = 'sounds/water.mp3';
-  static const String sfxBrush = 'sounds/brush.mp3';
-  static const String sfxVictory = 'sounds/victory.mp3';
-  static const String sfxApplause = 'sounds/applause.mp3';
-  static const String sfxMusic = 'sounds/music_loop.mp3';
+  // --- Sounds (relative to assets/ — see lib/core/audio/audio_cues.dart) ---
+  static const String sfxTap = 'audio/sfx/tap.mp3';
+  static const String sfxSparkle = 'audio/sfx/sparkle.mp3';
+  static const String sfxBubble = 'audio/sfx/bubble.mp3';
+  static const String sfxWater = 'audio/sfx/water.mp3';
+  static const String sfxBrush = 'audio/sfx/brush.mp3';
+  static const String sfxPop = 'audio/sfx/pop.mp3';
+  static const String sfxSuccess = 'audio/sfx/success.mp3';
+  static const String sfxGift = 'audio/sfx/gift.mp3';
+  static const String sfxVictory = 'audio/sfx/victory.mp3';
+  static const String sfxApplause = 'audio/sfx/applause.mp3';
+  static const String musicSpaLoop = 'audio/music/spa_loop.mp3';
 
   // --- Animations ---
   static const String sparkleAnim = 'assets/animations/sparkle.json';

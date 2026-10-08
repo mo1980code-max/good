@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../art/art_or_fallback.dart';
 import '../core/theme/app_colors.dart';
 import '../core/utils/responsive.dart';
-import '../core/utils/sound_helper.dart';
+import '../core/audio/sound_helper.dart';
 import '../features/game/game_providers.dart';
 import '../widgets/cute_background.dart';
 import '../widgets/icon_bubble_button.dart';

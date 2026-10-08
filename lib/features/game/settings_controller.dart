@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/feedback_helper.dart';
-import '../../core/utils/sound_helper.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../data/models/settings_model.dart';
 import '../../data/repositories/local_storage_service.dart';
 
@@ -16,9 +16,8 @@ class SettingsController extends Notifier<SettingsModel> {
   SettingsModel build() {
     final SettingsModel settings = LocalStorageService.instance.loadSettings();
 
-    // Sync the low-level helpers before the first frame is painted.
-    SoundHelper.soundOn = settings.soundOn;
-    SoundHelper.musicOn = settings.musicOn;
+    // Sync the audio engine + haptics before the first frame is painted.
+    SoundHelper.configure(sound: settings.soundOn, music: settings.musicOn);
     FeedbackHelper.enabled = settings.hapticsOn && settings.soundOn;
 
     return settings;

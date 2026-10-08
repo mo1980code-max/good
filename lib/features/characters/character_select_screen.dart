@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../art/art_or_fallback.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/utils/responsive.dart';
-import '../../core/utils/sound_helper.dart';
+import '../../core/audio/sound_helper.dart';
 import '../../data/models/character_model.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
