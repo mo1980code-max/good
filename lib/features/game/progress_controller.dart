@@ -103,6 +103,41 @@ class ProgressController extends Notifier<ProgressState> {
     return true;
   }
 
+  /// Gives an item for free (surprise boxes, achievements).
+  void grantUnlock(String itemId) {
+    if (state.isUnlocked(itemId)) return;
+    state = state.copyWith(
+      unlockedItemIds: <String>{...state.unlockedItemIds, itemId},
+    );
+    unawaited(_persist());
+  }
+
+  void addCoins(int amount) {
+    if (amount == 0) return;
+    state = state.copyWith(coins: state.coins + amount);
+    unawaited(_persist());
+  }
+
+  /// Surprise boxes cost a key. Returns false when the purse is empty.
+  bool spendKeys(int amount) {
+    if (amount <= 0) return true;
+    if (state.keys < amount) return false;
+    state = state.copyWith(keys: state.keys - amount);
+    unawaited(_persist());
+    return true;
+  }
+
+  // --- Album ---------------------------------------------------------------
+
+  /// Removes one design from the album (used by the gated delete action).
+  void removeDesign(String designId) {
+    final List<GalleryItem> gallery = state.gallery
+        .where((GalleryItem item) => item.id != designId)
+        .toList();
+    state = state.copyWith(gallery: gallery);
+    unawaited(_persist());
+  }
+
   // --- Reset (behind the grown-ups gate) -----------------------------------
 
   /// Clears progress, album and the daily-gift clock.

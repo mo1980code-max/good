@@ -1,13 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-/// Character select — the six original friends, breathing and blinking.
-///
-/// TODO(screens-phase): built in the next phase.
-class CharacterSelectScreen extends StatelessWidget {
+import '../../core/router/app_routes.dart';
+import '../../core/utils/sound_helper.dart';
+import '../../data/models/character_model.dart';
+import '../../features/game/game_providers.dart';
+import '../../widgets/big_button.dart';
+import '../../widgets/character_face.dart';
+import '../../widgets/kid_screen.dart';
+import '../../widgets/option_tile.dart';
+
+/// Pick your friend — six originals, each with its own look and mood.
+class CharacterSelectScreen extends ConsumerWidget {
   const CharacterSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: SizedBox.expand());
+  Widget build(BuildContext context, WidgetRef ref) {
+    final String selectedId =
+        ref.watch(roundControllerProvider.select((r) => r.characterId));
+
+    return KidScreen(
+      center: const Text(
+        'Pick a friend',
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Fits both a small phone and a tablet without overflowing.
+                final double tile =
+                    ((constraints.maxWidth / 2) - 16).clamp(88, 190);
+                final double faceSize =
+                    (tile * 0.72).clamp(60, 140);
+
+                return GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.86,
+                  children: <Widget>[
+                    for (final CharacterModel character in CharacterModel.all)
+                      Center(
+                        child: OptionTile(
+                          size: tile,
+                          selected: character.id == selectedId,
+                          accent: character.accent,
+                          semanticLabel: character.name,
+                          onTap: () {
+                            ref
+                                .read(roundControllerProvider.notifier)
+                                .startRound(character.id);
+                            SoundHelper.success();
+                          },
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: CharacterFace(
+                              character: character,
+                              size: faceSize,
+                              mood: character.id == selectedId
+                                  ? FaceMood.happy
+                                  : FaceMood.calm,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+          BigButton(
+            icon: Icons.auto_awesome_rounded,
+            label: 'Start',
+            onPressed: () {
+              SoundHelper.sparkle();
+              context.go(AppRoutes.spa);
+            },
+          ).animate().slideY(begin: 0.4, end: 0).fadeIn(duration: 300.ms),
+        ],
+      ),
+    );
   }
 }

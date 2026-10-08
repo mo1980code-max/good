@@ -13,13 +13,29 @@ just big friendly buttons, sparkles and happy sounds.
 
 | Phase | Scope | State |
 |---|---|---|
-| **Phase 1 — Architecture** | models, storage, state management, routing, theme, helpers | ✅ **done (this revision)** |
-| Phase 1 — Screens | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | 🕐 next |
-| Phase 2 — Polish | sounds, sparkles, confetti, daily gift, surprise box, star wall | 🕐 |
+| **Phase 1 — Architecture** | models, storage, state management, routing, theme, helpers | ✅ done |
+| **Phase 1 — Screens** | splash, home, characters, spa, studio, reveal, gallery, rewards, settings | ✅ **done (this revision)** |
+| Phase 2 — Polish | real sounds/art, extra rooms, unlockable themes, achievements | 🕐 next |
 | Phase 3 — Release | device testing, assets, store screenshots, privacy policy, age rating | 🕐 |
 
-Screens currently exist as **placeholders** (so the app compiles and the router
-works end-to-end). They are intentionally empty — built in the screens phase.
+**Everything runs with zero art files.** Faces, the spa hand, nails, patterns,
+stickers and rings are drawn procedurally (CustomPainter), so the game is
+playable and pretty today — dropping real PNGs later only *upgrades* it.
+Missing sounds simply stay silent; nothing ever crashes.
+
+### The nine screens
+
+| Screen | What happens | Kid-safety detail |
+|---|---|---|
+| Splash | logo, chime, auto-advance | no taps required |
+| Home | Play / Album / Gifts + counters | settings behind the grown-ups gate |
+| Characters | 6 friends, each with its own mood | tap = pick, no confirm dialogs |
+| Spa | 5 rub-to-win steps with live feedback | one gesture, impossible to fail |
+| Studio | shape → color → pattern → sticker → ring | locked items invite, never frustrate |
+| Reveal | confetti, applause, 3 stars, auto-saved design | the PNG is stored even if never tapped |
+| Album | every design, newest first | delete requires a grown-up hold |
+| Rewards | daily gift + surprise box (1 key) | streak stars, no timers, no pressure |
+| Settings | sound, music, vibration, calm motion, reset | reset needs the star hold again |
 
 ---
 

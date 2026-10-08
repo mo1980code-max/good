@@ -10,6 +10,11 @@ import 'progress_controller.dart';
 import 'round_controller.dart';
 import 'settings_controller.dart';
 
+// One import for screens: `game_providers` also exposes the controller types.
+export 'progress_controller.dart';
+export 'round_controller.dart';
+export 'settings_controller.dart';
+
 // --- Low-level singletons ---------------------------------------------------
 
 /// The device storage (initialised once in `main.dart`).
