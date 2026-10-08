@@ -51,9 +51,8 @@ abstract final class ArtSlots {
 
   // --- Big props ----------------------------------------------------------
 
-  /// Optional illustrated hand for the spa scene. When absent the animated
-  /// procedural hand is used (which is the current default).
-  static const String spaHand = 'assets/images/hand/spa_hand.png';
+  /// The physically detailed hand used by both the spa and the studio.
+  static const String spaHand = 'assets/images/hand/realistic_hand.png';
 
   /// Optional album frame drawn around finished designs.
   static const String albumFrame = 'assets/images/ui/album_frame.png';

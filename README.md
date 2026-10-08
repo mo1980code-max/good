@@ -183,22 +183,28 @@ lib/art/
   art_or_fallback.dart  show the file if it exists, draw it if not
 ```
 
-* Drop a correctly named PNG into `assets/images/...` and it appears —
-  **no code change**.
-* Delete the whole `assets/` folder and the game still looks intentional
-  (faces, hand, nails, patterns and sparkles are all painted procedurally).
-* **Shipped art:** `logo.png` + the six character portraits, one consistent
-  style, already cropped to squares and optimised (7.9 MB → 3.1 MB).
-* Rooms, tools, stickers, rings and frames are pending — ready-made prompts
-  live in [docs/art-prompts.md](docs/art-prompts.md), and the rules in
-  [docs/art-bible.md](docs/art-bible.md).
+* **Shipped hand art:** `assets/images/hand/realistic_hand.png` is a transparent,
+  top-down, physically detailed hand with five natural nail beds. It replaced
+  the old rounded-column hand; the spa and studio now share the same asset.
+* The hand remains interactive: the spa samples new cells along the drag path,
+  while the studio clips polish to five anatomical nail masks and grows each
+  nail from brush travel distance. A tap alone cannot finish either action.
+* Skin-tone grading, nail shape and short/medium/long nail length are live
+  selections. The five bottle choices are stored in the recipe so Album and
+  Reveal show the same multicolour manicure.
+* **Shipped art:** `logo.png` + the six character portraits + the realistic hand,
+  one consistent premium visual layer. Rooms, stickers and rings still keep
+  their safe fallbacks when optional art is absent.
+* Tools are rendered as live glass/gradient objects (sponge pores, soap pump,
+  water nozzle, towel weave, cream tube, polish bottle and brush), so they
+  follow the gesture instead of being static screenshots.
 * Tablets are supported: content stays inside a comfortable width and grids
   gain a column (`lib/core/utils/responsive.dart`).
 
-**Everything runs with zero art files.** Faces, the spa hand, nails, patterns,
-stickers and rings are drawn procedurally (CustomPainter), so the game is
-playable and pretty today — dropping real PNGs later only *upgrades* it.
-Missing sounds simply stay silent; nothing ever crashes.
+**The interaction remains resilient.** The premium hand asset is shipped and
+used in the main play surfaces; if any optional sticker, ring or room art is
+missing, the existing fallbacks keep the game playable. Missing sounds simply
+stay silent; nothing ever crashes.
 
 ### The nine screens
 
@@ -207,8 +213,8 @@ Missing sounds simply stay silent; nothing ever crashes.
 | Splash | logo, chime, auto-advance | no taps required |
 | Home | Play / Album / Gifts + counters | settings behind the grown-ups gate |
 | Characters | 6 friends, each with its own mood | tap = pick, no confirm dialogs |
-| Spa | 5 rub-to-win steps with live feedback | one gesture, impossible to fail |
-| Studio | shape → color → pattern → sticker → ring | locked items invite, never frustrate |
+| Spa | 5 movement-based steps with real sponge, soap, water, towel and cream feedback | Skip is always safe |
+| Studio | shape/length → bottle + five-nail brush painting → pattern → sticker → ring | a tap cannot finish a nail |
 | Reveal | confetti, applause, 3 stars, auto-saved design | the PNG is stored even if never tapped |
 | Album | every design, newest first | delete requires a grown-up hold |
 | Rewards | daily gift + surprise box (1 key) | streak stars, no timers, no pressure |
@@ -280,7 +286,8 @@ assets/audio/music/spa_loop.mp3                 # ✅ shipped (18.85 s loop)
 assets/images/characters/{kitty,bunny,panda,unicorn,fairy,kid}.png
 assets/images/tools/{sponge,soap,towel,cream,brush,water}.png
 assets/images/stickers/{star,heart,...,butterfly}.png
-assets/images/{hand_dirty,hand_clean}.png
+assets/images/hand/realistic_hand.png       # ✅ shipped, transparent realistic hand
+assets/images/{hand_dirty,hand_clean}.png    # legacy optional slots
 assets/fonts/Fredoka-*.ttf        # then uncomment the fonts block in pubspec.yaml
 ```
 

@@ -10,6 +10,7 @@ import '../../data/models/character_model.dart';
 import '../../data/models/nail_item_model.dart';
 import '../../data/models/progress_state.dart';
 import '../../data/models/round_state.dart';
+import '../../data/models/skin_tone.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
 import '../../widgets/character_face.dart';
@@ -17,28 +18,40 @@ import '../../widgets/counter_pill.dart';
 import '../../widgets/design_preview.dart';
 import '../../widgets/kid_screen.dart';
 import '../../widgets/option_tile.dart';
+import '../../widgets/realistic_hand.dart';
 import '../../widgets/safe_asset_image.dart';
+import '../../widgets/skin_tone_picker.dart';
 
-/// Nail studio — shape, color, pattern, sticker, ring.
+/// Nail studio — shape, live brush paint, pattern, sticker, ring.
 ///
-/// Locked items stay visible: tapping one buys it with coins (with a friendly
-/// nudge when the purse is empty). Long-press clears the current step.
-class NailStudioScreen extends ConsumerWidget {
+/// The first color step is now a real five-nail painting interaction. A bottle
+/// loads the brush; only a continuous drag over a nail grows its coverage.
+class NailStudioScreen extends ConsumerStatefulWidget {
   const NailStudioScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NailStudioScreen> createState() => _NailStudioScreenState();
+}
+
+class _NailStudioScreenState extends ConsumerState<NailStudioScreen> {
+  Offset? _brushPoint;
+  int _activeNail = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final RoundState round = ref.watch(roundControllerProvider);
     final ProgressState progress = ref.watch(progressControllerProvider);
     final CharacterModel character = ref.watch(selectedCharacterProvider);
     final RoundController controller =
         ref.read(roundControllerProvider.notifier);
+    final NailColorOption selectedColour = NailCatalog.colorById(round.colorId);
 
-    final NailColorOption color =
-        round.colorId == null ? NailCatalog.colors.first : NailCatalog.colorById(round.colorId);
-    final NailPattern pattern = NailCatalog.patternById(round.patternId);
-    final DecorItem sticker = NailCatalog.stickerById(round.stickerId);
-    final DecorItem ring = NailCatalog.ringById(round.ringId);
+    final Map<int, Color> paintedColours = <int, Color>{
+      for (final MapEntry<int, String> entry in round.nailColors.entries)
+        entry.key: NailCatalog.colorById(entry.value).color,
+    };
+    final bool showLegacyBase =
+        round.studioStep > 1 && round.nailColors.isEmpty && round.colorId != null;
 
     return KidScreen(
       roomId: 'studio',
@@ -50,51 +63,130 @@ class NailStudioScreen extends ConsumerWidget {
       body: Column(
         children: <Widget>[
           Expanded(
-            child: Stack(
-              children: <Widget>[
-                // Live preview of the design so far.
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(34),
-                      border: Border.all(color: AppColors.white, width: 3),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.white.withValues(alpha: 0.74),
+                borderRadius: BorderRadius.circular(34),
+                border: Border.all(color: AppColors.white, width: 3),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 16,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  Positioned.fill(
+                    child: RealisticHandPreview(
+                      shape: round.shape ?? NailShape.round,
+                      nailLength: NailLength.fromId(round.nailLengthId),
+                      colorOption: showLegacyBase ? selectedColour : null,
+                      nailColors: paintedColours,
+                      nailProgress: round.nailCoverage,
+                      pattern: round.patternId == null
+                          ? null
+                          : NailCatalog.patternById(round.patternId),
+                      sticker: round.stickerId == null
+                          ? null
+                          : NailCatalog.stickerById(round.stickerId),
+                      ring: round.ringId == null
+                          ? null
+                          : NailCatalog.ringById(round.ringId),
+                      showSticker: round.studioStep >= 3,
+                      showRing: round.studioStep >= 4,
+                      showSparkles: round.studioStep >= 2,
+                      skinTone: SkinTone.fromId(round.skinToneId),
+                      brushPosition: _brushPoint,
+                      brushColor: selectedColour.color,
+                      showBrush: round.studioStep == 1 && round.colorId != null,
+                      onBrushMove: round.studioStep == 1
+                          ? _paintWithBrush
+                          : null,
+                      onBrushEnd: round.studioStep == 1
+                          ? () => setState(() => _brushPoint = null)
+                          : null,
+                      onNailSelected: round.studioStep == 1
+                          ? (int index) => setState(() => _activeNail = index)
+                          : null,
+                      onNailLongPress: round.studioStep == 1
+                          ? (int index) {
+                              controller.clearNail(index);
+                              setState(() => _activeNail = index);
+                              SoundHelper.pop();
+                            }
+                          : null,
                     ),
-                    child: DesignPreview(
-                      shape: round.shape,
-                      colorOption: round.colorId == null ? null : color,
-                      pattern: round.patternId == null ? null : pattern,
-                      sticker: round.stickerId == null ? null : sticker,
-                      ring: round.ringId == null ? null : ring,
+                  ),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: SkinTonePicker(
+                      selected: SkinTone.fromId(round.skinToneId),
+                      compact: true,
+                      onChanged: (SkinTone value) {
+                        controller.selectSkinTone(value.id);
+                        SoundHelper.tap();
+                      },
                     ),
                   ),
-                ),
-                Positioned(
-                  left: 8,
-                  top: 8,
-                  child: CharacterFace(
-                    character: character,
-                    size: 74,
-                    mood: FaceMood.happy,
+                  Positioned(
+                    right: 12,
+                    bottom: 14,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        if (round.studioStep == 1)
+                          IgnorePointer(
+                            child: PolishBottleVisual(
+                              color: selectedColour.color,
+                              open: _brushPoint != null,
+                              size: 92,
+                            ),
+                          ),
+                        IgnorePointer(
+                          child: CharacterFace(
+                            character: character,
+                            size: 66,
+                            mood: FaceMood.happy,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Positioned(
-                  right: 10,
-                  top: 14,
-                  child: CounterPill(
-                    icon: Icons.monetization_on_rounded,
-                    value: progress.coins,
-                    color: AppColors.mint,
-                    size: 40,
+                  if (round.studioStep == 1)
+                    Positioned(
+                      left: 14,
+                      bottom: 14,
+                      child: _PaintProgressBadge(
+                        activeNail: _activeNail,
+                        coverage: round.nailCoverage[_activeNail] ?? 0,
+                        complete: round.allNailsPainted,
+                        onClear: () {
+                          controller.clearNail(_activeNail);
+                          SoundHelper.pop();
+                        },
+                      ),
+                    ),
+                  Positioned(
+                    right: 12,
+                    top: 14,
+                    child: CounterPill(
+                      icon: Icons.monetization_on_rounded,
+                      value: progress.coins,
+                      color: AppColors.mint,
+                      size: 40,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           SizedBox(
-            height: 108,
-            // Steps slide in gently; the live preview above never blinks.
+            height: round.studioStep == 1 ? 116 : 108,
             child: AnimatedSwitcher(
               duration: MotionTokens.screenTransition,
               switchInCurve: MotionTokens.soft,
@@ -107,9 +199,78 @@ class NailStudioScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          if (round.studioStep == 1) ...<Widget>[
+            const SizedBox(height: 2),
+            Text(
+              round.allNailsPainted
+                  ? 'Beautiful! Every nail is glossy.'
+                  : 'Drag the brush over all five nails',
+              style: const TextStyle(
+                color: AppColors.textSoft,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
           _ContinueButton(round: round, controller: controller),
         ],
+      ),
+    );
+  }
+
+  void _paintWithBrush(NailBrushEvent event) {
+    setState(() {
+      _brushPoint = event.position;
+      if (event.nailIndex != null) _activeNail = event.nailIndex!;
+    });
+    final int? nail = event.nailIndex;
+    if (nail == null || event.distance <= 0) return;
+    ref
+        .read(roundControllerProvider.notifier)
+        .paintNail(nail, distance: event.distance);
+    SoundHelper.brush();
+  }
+}
+
+class _PaintProgressBadge extends StatelessWidget {
+  const _PaintProgressBadge({
+    required this.activeNail,
+    required this.coverage,
+    required this.complete,
+  });
+
+  final int activeNail;
+  final double coverage;
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.white, width: 2),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              complete ? Icons.check_circle_rounded : Icons.brush_rounded,
+              size: 20,
+              color: complete ? AppColors.mint : AppColors.pink,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '${activeNail + 1}/5  ${(coverage * 100).round()}%',
+              style: const TextStyle(
+                color: AppColors.textDeep,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -281,10 +442,38 @@ class _ShapeRow extends StatelessWidget {
               height: 58,
               child: NailSwatch(
                 shape: shape,
-                color: NailCatalog
-                    .colorById(round.colorId)
-                    .color,
+                color: NailCatalog.colorById(round.colorId).color,
               ),
+            ),
+          ),
+        for (final NailLength length in NailLength.values)
+          OptionTile(
+            size: 88,
+            selected: round.nailLengthId == length.id,
+            semanticLabel: length.label,
+            onTap: () {
+              controller.selectNailLength(length);
+              SoundHelper.tap();
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  Icons.height_rounded,
+                  size: 34,
+                  color: length == NailLength.long
+                      ? AppColors.pink
+                      : AppColors.lavender,
+                ),
+                Text(
+                  length.label,
+                  style: const TextStyle(
+                    color: AppColors.textDeep,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           ),
       ],

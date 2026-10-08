@@ -146,7 +146,12 @@ class _DesignCardState extends ConsumerState<_DesignCard> {
         ),
         child: DesignPreview(
           shape: NailShape.fromId(item.shapeId),
+          nailLength: NailLength.fromId(item.nailLengthId),
           colorOption: NailCatalog.colorById(item.colorId),
+          nailColors: <int, Color>{
+            for (final MapEntry<int, String> entry in item.nailColors.entries)
+              entry.key: NailCatalog.colorById(entry.value).color,
+          },
           pattern: NailCatalog.patternById(item.patternId),
           sticker: NailCatalog.stickerById(item.stickerId),
           ring: NailCatalog.ringById(item.ringId),

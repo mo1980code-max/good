@@ -11,7 +11,11 @@ abstract final class Assets {
   static const String logo = 'assets/images/ui/logo.png';
   static const String sparkleIcon = 'assets/images/ui/sparkle.png';
 
-  // --- Hands (spa scene, before/after) ---
+  // --- Real hand artwork ---------------------------------------------------
+  // Transparent, top-down hand with natural nail beds. All interaction is
+  // layered over this asset; it is not a screenshot pretending to be a game.
+  static const String realisticHand =
+      'assets/images/hand/realistic_hand.png';
   static const String handDirty = 'assets/images/hand_dirty.png';
   static const String handClean = 'assets/images/hand_clean.png';
 
