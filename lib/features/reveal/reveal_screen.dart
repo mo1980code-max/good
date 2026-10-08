@@ -18,7 +18,8 @@ import '../../core/audio/sound_helper.dart';
 import '../../data/models/character_model.dart';
 import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
-import '../../data/repositories/gallery_repository.dart';
+import '../../core/achievements/achievement.dart';
+import '../../data/repositories/design_saver.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
 import '../../widgets/character_face.dart';
@@ -58,6 +59,7 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
 
   GalleryItem? _item;
   bool _saved = false;
+  List<Achievement> _newBadges = const <Achievement>[];
   bool _captureRunning = false;
   int _captureAttempts = 0;
 
@@ -106,42 +108,68 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
     final GalleryItem? item = _item ?? _latestItem();
     if (item == null) return;
 
-    // Read the dependencies BEFORE the first await: after the screen is
-    // disposed this state object is gone, but the write must still land.
-    final GalleryRepository repository = ref.read(galleryRepositoryProvider);
-    final ProgressController progress =
-        ref.read(progressControllerProvider.notifier);
+    // Read the saver BEFORE the first await. DesignSaver touches only
+    // long-lived singletons (no provider state, no BuildContext), so the
+    // write survives the screen being disposed mid-capture.
+    final DesignSaver saver = ref.read(designSaverProvider);
 
     _captureRunning = true;
     try {
-      final Uint8List? bytes = await _shot.capture(pixelRatio: 2.5);
-      if (bytes == null || bytes.isEmpty) {
-        _scheduleRetry(manual: manual);
-        return;
-      }
-
-      final String? fileName = await repository.saveDesignImage(
-        bytes,
+      final DesignSaveResult result = await saver.save(
         designId: item.id,
+        capture: () => _shot.capture(pixelRatio: 2.5),
       );
 
-      if (fileName == null) {
+      if (!result.isSaved) {
         _scheduleRetry(manual: manual);
         return;
       }
 
-      // Persist the file name on the album entry (safe even if unmounted).
-      progress.attachImage(item.id, fileName);
+      // Cosmetic only, and deliberately defended: if the provider scope is
+      // already gone this call may throw, but the durable map (written inside
+      // DesignSaver) means the album still finds the image on its next load.
+      try {
+        ref
+            .read(progressControllerProvider.notifier)
+            .attachImage(item.id, result.fileName);
+      } catch (_) {
+        // Nothing to mirror in memory — storage already has the truth.
+      }
 
       if (mounted) {
         setState(() => _saved = true);
         unawaited(SoundHelper.sparkle());
         if (manual) _toast(Icons.check_rounded);
+        try {
+          _celebrateAchievements();
+        } catch (_) {
+          // Badges are re-evaluated on the next reveal / star-wall visit.
+        }
       }
-    } catch (_) {
-      _scheduleRetry(manual: manual);
     } finally {
       _captureRunning = false;
+    }
+  }
+
+  /// Badges earned by this round. Gentle, one at a time, and never a dialog
+  /// the child has to dismiss.
+  void _celebrateAchievements() {
+    final List<Achievement> fresh = ref
+        .read(progressControllerProvider.notifier)
+        .claimAchievements(
+          ref.read(progressControllerProvider.notifier).pendingAchievements(),
+        );
+    if (fresh.isEmpty || !mounted) return;
+
+    setState(() => _newBadges = fresh);
+    unawaited(SoundHelper.gift());
+    for (int i = 0; i < fresh.length; i++) {
+      _timers.add(
+        Timer(Duration(milliseconds: 700 * i), () {
+          if (!mounted) return;
+          unawaited(SoundHelper.sparkle());
+        }),
+      );
     }
   }
 
@@ -281,6 +309,24 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                       top: 10,
                       child: SavedBadge(visible: _saved),
                     ),
+                    // Badges earned this round, popping in one after another.
+                    if (_newBadges.isNotEmpty)
+                      Positioned(
+                        left: 10,
+                        bottom: 10,
+                        right: 10,
+                        child: Wrap(
+                          spacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: <Widget>[
+                            for (int i = 0; i < _newBadges.length; i++)
+                              PopIn(
+                                delay: Duration(milliseconds: 260 * i),
+                                child: _BadgeChip(badge: _newBadges[i]),
+                              ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -372,6 +418,53 @@ class _RevealScreenState extends ConsumerState<RevealScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A tiny earned-badge chip (icon + name), shown on the reveal screen.
+class _BadgeChip extends StatelessWidget {
+  const _BadgeChip({required this.badge});
+
+  final Achievement badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: (badge.color ?? AppColors.yellow),
+          width: 2.5,
+        ),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(
+            badge.icon,
+            size: 22,
+            color: badge.color ?? AppColors.yellow,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            badge.title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+            ),
           ),
         ],
       ),

@@ -20,7 +20,13 @@ class GalleryRepository {
       final Directory dir = await _designsDir();
       final String fileName = 'design_$designId.png';
       final File file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(bytes, flush: true);
+
+      // Write to a temp file first, then rename: a save interrupted by the
+      // app closing can never leave a half-written PNG behind.
+      final File temp = File('${dir.path}/.tmp_$designId');
+      await temp.writeAsBytes(bytes, flush: true);
+      await temp.rename(file.path);
+
       return fileName;
     } catch (_) {
       return null;

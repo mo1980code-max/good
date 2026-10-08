@@ -19,7 +19,9 @@ class LocalStorageService {
   static final LocalStorageService instance = LocalStorageService._();
 
   /// Bump when the save format changes, then add a migration in [_migrate].
-  static const int schemaVersion = 1;
+  /// v2 added: achievements, spa-step / box counters (all optional on read)
+  /// and the durable design-image map.
+  static const int schemaVersion = 2;
 
   static const String _kSchema = 'sparkle.schema';
   static const String _kProgress = 'sparkle.progress';
@@ -27,6 +29,11 @@ class LocalStorageService {
   static const String _kCharacter = 'sparkle.character';
   static const String _kDailyDate = 'sparkle.daily.date';
   static const String _kDailyStreak = 'sparkle.daily.streak';
+
+  /// designId -> PNG file name. Written by [DesignSaver] and merged into the
+  /// album when progress loads, so a save that lands *after* the reveal screen
+  /// was closed is still picked up.
+  static const String _kDesignImages = 'sparkle.design.images';
 
   SharedPreferences? _prefs;
   Future<void> _writeQueue = Future<void>.value();
@@ -99,6 +106,48 @@ class LocalStorageService {
     });
   }
 
+  // --- Design images (durable, provider-free) ------------------------------
+
+  Map<String, String> loadDesignImages() {
+    final String? raw = _prefs?.getString(_kDesignImages);
+    if (raw == null || raw.isEmpty) return <String, String>{};
+
+    try {
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! Map) return <String, String>{};
+
+      final Map<String, String> images = <String, String>{};
+      decoded.forEach((Object? key, Object? value) {
+        if (key is String && value is String && value.isNotEmpty) {
+          images[key] = value;
+        }
+      });
+      return images;
+    } catch (error) {
+      debugPrint('LocalStorageService: design images unreadable ($error)');
+      return <String, String>{};
+    }
+  }
+
+  /// Remembers which PNG belongs to which design. This is the write that makes
+  /// a save survive the screen that started it.
+  Future<void> setDesignImage(String designId, String fileName) {
+    return _enqueue(() async {
+      final Map<String, String> images = loadDesignImages();
+      images[designId] = fileName;
+      await _prefs?.setString(_kDesignImages, jsonEncode(images));
+    });
+  }
+
+  Future<void> removeDesignImage(String designId) {
+    return _enqueue(() async {
+      final Map<String, String> images = loadDesignImages();
+      if (images.remove(designId) != null) {
+        await _prefs?.setString(_kDesignImages, jsonEncode(images));
+      }
+    });
+  }
+
   // --- Resets (both are behind the grown-ups gate in the UI) ---------------
 
   /// Clears progress + album + daily gift. **Keeps** sound/music settings.
@@ -109,6 +158,7 @@ class LocalStorageService {
     await prefs.remove(_kCharacter);
     await prefs.remove(_kDailyDate);
     await prefs.remove(_kDailyStreak);
+    await prefs.remove(_kDesignImages);
   }
 
   /// Clears literally everything, including settings.
@@ -124,9 +174,11 @@ class LocalStorageService {
     if (prefs == null) return;
 
     final int from = prefs.getInt(_kSchema) ?? 0;
-    if (from < 1) {
-      // v0 -> v1: nothing to move yet; both models already parse missing
-      // fields into safe defaults, so this is just a version stamp.
+
+    // v0/v1 -> v2: nothing to move. Every model parses missing fields into
+    // safe defaults (a v1 save simply has no achievements yet, and the album
+    // merges whatever design images it finds), so this is only a stamp.
+    if (from < schemaVersion) {
       await prefs.setInt(_kSchema, schemaVersion);
     }
   }

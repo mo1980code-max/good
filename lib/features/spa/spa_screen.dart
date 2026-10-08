@@ -134,6 +134,11 @@ class SpaScreen extends ConsumerWidget {
             enabled: round.isSpaStepComplete,
             height: 88,
             onPressed: () {
+              // Every tap finishes one spa step — counted for the badges.
+              ref
+                  .read(progressControllerProvider.notifier)
+                  .recordSpaSteps(1);
+
               if (round.isLastSpaStep) {
                 SoundHelper.sparkle();
                 context.go(AppRoutes.studio);

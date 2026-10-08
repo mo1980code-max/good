@@ -4,6 +4,7 @@ import '../../data/models/character_model.dart';
 import '../../data/models/progress_state.dart';
 import '../../data/models/round_state.dart';
 import '../../data/models/settings_model.dart';
+import '../../data/repositories/design_saver.dart';
 import '../../data/repositories/gallery_repository.dart';
 import '../../data/repositories/local_storage_service.dart';
 import 'progress_controller.dart';
@@ -24,6 +25,15 @@ final Provider<LocalStorageService> localStorageProvider =
 /// Saves/reads design PNGs on the device.
 final Provider<GalleryRepository> galleryRepositoryProvider =
     Provider<GalleryRepository>((ref) => GalleryRepository());
+
+/// Saves a finished design **without touching any provider state**, so the
+/// write still lands after the reveal screen (or the whole scope) is gone.
+final Provider<DesignSaver> designSaverProvider = Provider<DesignSaver>(
+  (ref) => DesignSaver(
+    repository: ref.read(galleryRepositoryProvider),
+    storage: LocalStorageService.instance,
+  ),
+);
 
 // --- The three game stores --------------------------------------------------
 

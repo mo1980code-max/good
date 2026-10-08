@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/achievements/achievement.dart';
+import '../../core/achievements/achievement_engine.dart';
+import '../../core/achievements/game_facts.dart';
 import '../../core/constants/game_constants.dart';
 import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
@@ -12,7 +15,13 @@ import '../../data/repositories/local_storage_service.dart';
 /// Owns stars, coins, keys, unlocked items and the album.
 class ProgressController extends Notifier<ProgressState> {
   @override
-  ProgressState build() => LocalStorageService.instance.loadProgress();
+  ProgressState build() {
+    final LocalStorageService storage = LocalStorageService.instance;
+
+    // Merge the durable design-image map (designId -> PNG). A save that landed
+    // *after* the reveal screen closed is picked up right here.
+    return storage.loadProgress().withDesignImages(storage.loadDesignImages());
+  }
 
   Future<void> _persist() => LocalStorageService.instance.saveProgress(state);
 
@@ -49,9 +58,13 @@ class ProgressController extends Notifier<ProgressState> {
     return item;
   }
 
-  /// Stores the captured PNG file name on an existing album entry.
+  /// Mirrors a design image that [DesignSaver] already stored on the device
+  /// into the in-memory album. Purely cosmetic: if this never runs (the screen
+  /// was disposed first), the next `build()` merges it from storage anyway.
   void attachImage(String designId, String? fileName) {
     if (fileName == null) return;
+    if (!_hasItem(designId)) return;
+
     final List<GalleryItem> gallery = state.gallery
         .map(
           (GalleryItem item) => item.id == designId
@@ -61,6 +74,60 @@ class ProgressController extends Notifier<ProgressState> {
         .toList();
     state = state.copyWith(gallery: gallery);
     unawaited(_persist());
+  }
+
+  bool _hasItem(String designId) =>
+      state.gallery.any((GalleryItem item) => item.id == designId);
+
+  // --- Achievements --------------------------------------------------------
+
+  /// Counters that feed the badges (spa steps, opened boxes).
+  void recordSpaSteps(int count) {
+    if (count <= 0) return;
+    state = state.copyWith(
+      spaStepsCompleted: state.spaStepsCompleted + count,
+    );
+    unawaited(_persist());
+  }
+
+  void recordBoxOpened() {
+    state = state.copyWith(boxesOpened: state.boxesOpened + 1);
+    unawaited(_persist());
+  }
+
+  /// Facts snapshot for the engine (pure, derived from what is already saved).
+  GameFacts get facts => GameFacts.fromProgress(state);
+
+  /// Badges reachable right now that were not earned yet. **Read-only**: this
+  /// never grants anything, so it is safe to call on every rebuild.
+  List<Achievement> pendingAchievements() => AchievementEngine.newlyEarned(
+        facts: facts,
+        earnedIds: state.achievements,
+      );
+
+  /// Grants the listed badges, once each, and returns them.
+  ///
+  /// Paying twice is impossible: an id already in [ProgressState.achievements]
+  /// is skipped, and the engine already filtered those out.
+  List<Achievement> claimAchievements(List<Achievement> candidates) {
+    final List<Achievement> fresh = candidates
+        .where((Achievement a) => !state.achievements.contains(a.id))
+        .toList();
+    if (fresh.isEmpty) return const <Achievement>[];
+
+    final ({int coins, int stars}) reward =
+        AchievementEngine.rewardFor(fresh);
+
+    state = state.copyWith(
+      achievements: <String>{
+        ...state.achievements,
+        ...fresh.map((Achievement a) => a.id),
+      },
+      coins: state.coins + reward.coins,
+      stars: state.stars + reward.stars,
+    );
+    unawaited(_persist());
+    return fresh;
   }
 
   // --- Daily gift ----------------------------------------------------------

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../animations/screen_transitions.dart';
 
+import '../../features/achievements/achievements_screen.dart';
 import '../../features/characters/character_select_screen.dart';
 import '../../features/gallery/gallery_screen.dart';
 import '../../features/home/home_screen.dart';
@@ -53,6 +54,10 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.rewards,
         pageBuilder: (_, __) => softPage(const RewardsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.stars,
+        pageBuilder: (_, __) => softPage(const AchievementsScreen()),
       ),
       GoRoute(
         path: AppRoutes.settings,

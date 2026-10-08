@@ -14,7 +14,7 @@ import '../../core/utils/responsive.dart';
 import '../../core/audio/sound_helper.dart';
 import '../../data/models/gallery_item.dart';
 import '../../data/models/nail_item_model.dart';
-import '../../data/repositories/gallery_repository.dart';
+import '../../data/repositories/design_saver.dart';
 import '../../features/game/game_providers.dart';
 import '../../widgets/big_button.dart';
 import '../../widgets/counter_pill.dart';
@@ -131,20 +131,21 @@ class _DesignCardState extends ConsumerState<_DesignCard> {
   Future<void> _repair() async {
     if (!_needsRepair) return;
 
-    final GalleryRepository repository = ref.read(galleryRepositoryProvider);
-    final ProgressController progress =
-        ref.read(progressControllerProvider.notifier);
+    // Same provider-free saver the reveal screen uses: the write does not
+    // depend on this card (or the album) still being alive.
+    final DesignSaver saver = ref.read(designSaverProvider);
 
     try {
       await Future<void>.delayed(const Duration(milliseconds: 350));
-      final Uint8List? bytes = await _repairShot.capture(pixelRatio: 2.5);
-      if (bytes == null || bytes.isEmpty) return;
-
-      final String? fileName = await repository.saveDesignImage(
-        bytes,
+      final DesignSaveResult result = await saver.save(
         designId: item.id,
+        capture: () => _repairShot.capture(pixelRatio: 2.5),
       );
-      progress.attachImage(item.id, fileName);
+      if (!result.isSaved) return;
+
+      ref
+          .read(progressControllerProvider.notifier)
+          .attachImage(item.id, result.fileName);
     } catch (_) {
       // Try again on the next visit — the recipe is always kept.
     }

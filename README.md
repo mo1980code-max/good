@@ -18,10 +18,50 @@ just big friendly buttons, sparkles and happy sounds.
 | **Phase 2.1 — Art & theme** | replaceable art layer, room backdrops, tablet layout, 7 real art assets | ✅ **done (this revision)** |
 | **Phase 2.2 — Audio** | `lib/core/audio/` engine + 11 real MP3 files (410 KB) | ✅ **done (this revision)** |
 | **Phase 2.3 — Motion** | shared motion engine, 9 screen entrances, full reveal choreography | ✅ **done (this revision)** |
-| Phase 2.4 — Achievements | star wall, badges, streak rewards | 🕐 |
+| **Phase 2.4 — Achievements** | pure engine, 14 badges, star wall screen, save durability fix | ✅ **done (this revision)** |
 | Phase 2.5 — Gift rooms | surprise boxes, unlockable themes | 🕐 |
 | Phase 2.6 — Hardening | tests, performance, final polish | 🕐 |
 | Phase 3 — Release | device testing, store screenshots, privacy policy, age rating | 🕐 |
+
+### Achievements & star wall (Phase 2.4)
+
+Three layers, exactly as specified:
+
+| Layer | File | Testable without Flutter UI? |
+|---|---|---|
+| **Engine** (pure maths) | `lib/core/achievements/achievement_engine.dart` | ✅ yes — no widgets, no storage, no timers |
+| **Facts** (a snapshot) | `lib/core/achievements/game_facts.dart` | ✅ yes |
+| **Progress repository** | `data/models/progress_state.dart` + `local_storage_service.dart` | ✅ yes (json round trips) |
+| **Star wall UI** | `lib/features/achievements/achievements_screen.dart` | widget layer |
+
+* **14 badges** across spa steps, colour/sticker/ring/pattern variety, all six
+  friends, daily streak and surprise boxes. Fun, never punishing.
+* **Pay once:** `claimAchievements` filters ids already recorded, and the engine
+  filters before that — a badge can never pay twice.
+* **Nothing is ever lost:** stars and badges only grow; only the gated
+  grown-ups reset clears them. No timers, no penalties, no ads, fully offline.
+* Most metrics are *derived from the album* (every design stores its full
+  recipe), so the game does not have to track things in the background.
+* Reachable from **Gifts → Stars**; the nine original screens keep working
+  unchanged.
+
+### Save durability (hardening after review)
+
+The review was right: reading `ref.read(...)` before an `await` protects the
+*widget*, not the *notifier*. So the save path no longer touches Riverpod at all:
+
+```
+lib/data/repositories/design_saver.dart
+  capture()  ->  atomic PNG write (tmp + rename)  ->  durable name map
+```
+
+* No `ref`, no `Notifier`, no `BuildContext` inside the save path.
+* The album merges that durable map when progress loads
+  (`ProgressState.withDesignImages`), so a write that lands **after** the child
+  left the celebration still shows up in the album.
+* A disposed notifier can no longer surface as an unhandled error — the in-memory
+  mirror is wrapped in `try/catch`, and storage is the source of truth.
+* Full reasoning: [docs/save-durability.md](docs/save-durability.md).
 
 ### Motion (Phase 2.3)
 
@@ -150,7 +190,8 @@ flutter run
 ### Tests
 
 ```bash
-flutter test          # pure logic: models, save parsing, catalog maths, motion rules
+flutter test          # pure logic: models, save parsing + merging, motion rules,
+                      # achievements engine (badges, rewards-once, wall maths)
 ```
 
 > ⚠️ **Nothing has been analysed or run yet** — the working environment has no

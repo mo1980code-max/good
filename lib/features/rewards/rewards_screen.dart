@@ -90,6 +90,14 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
           ),
           const SizedBox(height: 10),
           BigButton(
+            icon: Icons.workspace_premium_rounded,
+            label: 'Stars',
+            color: AppColors.yellow,
+            height: 78,
+            onPressed: () => context.go(AppRoutes.stars),
+          ),
+          const SizedBox(height: 10),
+          BigButton(
             icon: Icons.home_rounded,
             height: 70,
             onPressed: () => context.go(AppRoutes.home),
@@ -132,6 +140,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       final ProgressController controller =
           ref.read(progressControllerProvider.notifier);
       if (!controller.spendKeys(1)) return;
+      controller.recordBoxOpened();
 
       final _Prize prize = _rollPrize();
       if (prize.itemId != null) {

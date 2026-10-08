@@ -12,6 +12,9 @@ class ProgressState {
     this.dailyStreak = 0,
     this.unlockedItemIds = const <String>{},
     this.gallery = const <GalleryItem>[],
+    this.achievements = const <String>{},
+    this.spaStepsCompleted = 0,
+    this.boxesOpened = 0,
   });
 
   static const ProgressState initial = ProgressState();
@@ -33,6 +36,16 @@ class ProgressState {
   /// Newest first.
   final List<GalleryItem> gallery;
 
+  /// Ids of the achievements already earned. **Stars and achievements can
+  /// never be lost**: they only grow, and only the grown-ups reset clears them.
+  final Set<String> achievements;
+
+  /// Spa mini-steps finished (5 per full round) — feeds the spa achievements.
+  final int spaStepsCompleted;
+
+  /// Surprise boxes opened — feeds the "surprise" achievement.
+  final int boxesOpened;
+
   int get designCount => gallery.length;
 
   bool isUnlocked(String itemId) => unlockedItemIds.contains(itemId);
@@ -47,6 +60,9 @@ class ProgressState {
     int? dailyStreak,
     Set<String>? unlockedItemIds,
     List<GalleryItem>? gallery,
+    Set<String>? achievements,
+    int? spaStepsCompleted,
+    int? boxesOpened,
   }) {
     return ProgressState(
       stars: stars ?? this.stars,
@@ -55,7 +71,29 @@ class ProgressState {
       dailyStreak: dailyStreak ?? this.dailyStreak,
       unlockedItemIds: unlockedItemIds ?? this.unlockedItemIds,
       gallery: gallery ?? this.gallery,
+      achievements: achievements ?? this.achievements,
+      spaStepsCompleted: spaStepsCompleted ?? this.spaStepsCompleted,
+      boxesOpened: boxesOpened ?? this.boxesOpened,
     );
+  }
+
+  /// Pure merge of the durable design-image map (designId -> PNG name).
+  ///
+  /// Called when progress loads. It is what makes a save that finished *after*
+  /// the reveal screen closed visible in the album.
+  ProgressState withDesignImages(Map<String, String> images) {
+    if (images.isEmpty || gallery.isEmpty) return this;
+
+    bool changed = false;
+    final List<GalleryItem> merged = gallery.map((GalleryItem item) {
+      if (item.imageFileName != null) return item;
+      final String? fileName = images[item.id];
+      if (fileName == null) return item;
+      changed = true;
+      return item.copyWith(imageFileName: fileName);
+    }).toList();
+
+    return changed ? copyWith(gallery: merged) : this;
   }
 
   Map<String, dynamic> toJson() {
@@ -66,6 +104,9 @@ class ProgressState {
       'dailyStreak': dailyStreak,
       'unlocked': unlockedItemIds.toList(),
       'gallery': gallery.map((GalleryItem item) => item.toJson()).toList(),
+      'achievements': achievements.toList(),
+      'spaSteps': spaStepsCompleted,
+      'boxesOpened': boxesOpened,
     };
   }
 
@@ -80,13 +121,7 @@ class ProgressState {
       }
     }
 
-    final Set<String> unlocked = <String>{};
-    final Object? rawUnlocked = json['unlocked'];
-    if (rawUnlocked is List) {
-      for (final Object? entry in rawUnlocked) {
-        if (entry is String && entry.isNotEmpty) unlocked.add(entry);
-      }
-    }
+    final Set<String> unlocked = _asStringSet(json['unlocked']);
 
     return ProgressState(
       stars: _asInt(json['stars']),
@@ -95,6 +130,9 @@ class ProgressState {
       dailyStreak: _asInt(json['dailyStreak']),
       unlockedItemIds: unlocked,
       gallery: gallery,
+      achievements: _asStringSet(json['achievements']),
+      spaStepsCompleted: _asInt(json['spaSteps']),
+      boxesOpened: _asInt(json['boxesOpened']),
     );
   }
 }
@@ -103,4 +141,14 @@ int _asInt(Object? value, [int fallback = 0]) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   return fallback;
+}
+
+Set<String> _asStringSet(Object? value) {
+  final Set<String> result = <String>{};
+  if (value is List) {
+    for (final Object? entry in value) {
+      if (entry is String && entry.isNotEmpty) result.add(entry);
+    }
+  }
+  return result;
 }

@@ -8,5 +8,6 @@ abstract final class AppRoutes {
   static const String reveal = '/reveal';
   static const String gallery = '/gallery';
   static const String rewards = '/rewards';
+  static const String stars = '/stars';
   static const String settings = '/settings';
 }
