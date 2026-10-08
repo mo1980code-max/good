@@ -117,6 +117,75 @@ void main() {
     });
   });
 
+  group('the grown-ups gate stays strong where it matters', () {
+    test('the gate has nothing to read (GDD: textless)', () {
+      final String gate = read('lib/core/utils/parent_gate.dart');
+      expect(gate.contains('Text('), isFalse,
+          reason: 'the gate and its dialog must stay textless');
+      expect(gate.contains('ParentGate('), isTrue,
+          reason: 'the hold-to-unlock widget is the whole point');
+    });
+
+    test('erasing data asks for two displaced holds', () {
+      const String doubleHold =
+          'showParentGateDialog(context, doubleHold: true)';
+      expect(read('lib/features/settings/settings_screen.dart')
+          .contains(doubleHold), isTrue,
+          reason: 'resetting everything is irreversible');
+      expect(read('lib/features/gallery/gallery_screen.dart')
+          .contains(doubleHold), isTrue,
+          reason: 'deleting a design is irreversible too');
+    });
+
+    test('every destructive call site sits behind the gate', () {
+      const Map<String, List<String>> destructive = <String, List<String>>{
+        'lib/features/settings/settings_screen.dart': <String>[
+          'resetProgress()',
+          'deleteAllDesignImages()',
+        ],
+        'lib/features/gallery/gallery_screen.dart': <String>[
+          'deleteDesignImage(',
+          'removeDesign(',
+        ],
+      };
+
+      destructive.forEach((String path, List<String> calls) {
+        final String code = read(path);
+        expect(code.contains('showParentGateDialog'), isTrue,
+            reason: '$path erases data and must ask the gate first');
+        for (final String call in calls) {
+          expect(code.contains(call), isTrue,
+              reason: '$call is expected to live in $path');
+        }
+      });
+    });
+
+    test('no visible string is longer than four words', () {
+      final RegExp literal = RegExp(r"Text\(\s*'((?:[^'\\]|\\.)*)'");
+      final List<String> offenders = <String>[];
+
+      for (final File file in dartFiles('lib')) {
+        final String code = withoutComments(file.readAsStringSync());
+        for (final RegExpMatch match in literal.allMatches(code)) {
+          final String visible = match
+              .group(1)!
+              .replaceAll(RegExp(r'\$\{[^}]*\}'), '')
+              .trim();
+          final int words = visible
+              .split(RegExp(r'\s+'))
+              .where((String word) => RegExp('[A-Za-z]').hasMatch(word))
+              .length;
+          if (words > 4) {
+            offenders.add('${file.path}: "$visible" ($words words)');
+          }
+        }
+      }
+
+      expect(offenders, isEmpty,
+          reason: 'GDD: in-app text is decorative and at most 4 words');
+    });
+  });
+
   group('the child-safety rules stay wired in', () {
     test('every screen keeps the shared home + mute skeleton', () {
       const Map<String, String> screens = <String, String>{

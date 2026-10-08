@@ -96,11 +96,9 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _resetProgress(BuildContext context, WidgetRef ref) async {
-    final bool allowed = await showParentGateDialog(
-      context,
-      title: 'Reset everything?',
-      actionLabel: 'Hold the star for 3 seconds to erase the album and rewards',
-    );
+    // Irreversible: two displaced holds, and not a single word to read.
+    final bool allowed =
+        await showParentGateDialog(context, doubleHold: true);
     if (!allowed || !context.mounted) return;
 
     // Images first, then the save data.

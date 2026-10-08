@@ -186,11 +186,9 @@ class _DesignCardState extends ConsumerState<_DesignCard> {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final bool allowed = await showParentGateDialog(
-      context,
-      title: 'Grown-ups only',
-      actionLabel: 'Hold the star to delete this design',
-    );
+    // Deleting a design cannot be undone: same two-hold rule, no text.
+    final bool allowed =
+        await showParentGateDialog(context, doubleHold: true);
     if (!allowed || !context.mounted) return;
 
     final String? fileName = item.imageFileName;

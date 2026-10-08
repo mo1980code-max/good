@@ -20,7 +20,7 @@ just big friendly buttons, sparkles and happy sounds.
 | **Phase 2.3 — Motion** | shared motion engine, 9 screen entrances, full reveal choreography | ✅ **done** |
 | **Phase 2.4 — Achievements** | pure engine, 14 badges, star wall screen, save durability fix | ✅ **done** |
 | **Phase 2.5 — Gift rooms** | 4 pastel rooms, 12 one-time surprise boxes, 8 gift-only studio items, pure gift engine | ✅ **done** |
-| **Phase 2.6 — Final QA** | full code review, 10 fixes, safety test suite, docs | 🔎 review + fixes ✅ · `flutter` tests ⏳ — see [docs/final-qa-report.md](docs/final-qa-report.md) |
+| **Phase 2.6 — Final QA** | full code review, 12 fixes (incl. the grown-ups gate), safety test suite, docs | 🔎 review + fixes ✅ · `flutter` tests ⏳ — see [docs/final-qa-report.md](docs/final-qa-report.md) |
 | Phase 3 — Release | device testing, store screenshots, privacy policy, age rating | 🕐 |
 
 ### Achievements & star wall (Phase 2.4)
@@ -103,6 +103,7 @@ was never run.** What the review actually changed:
 | Images decoded at full size for tiny widgets (488 KB logo → 120 px) | `SafeAssetImage` now passes `cacheWidth`/`cacheHeight` from the display size |
 | Unused packages `lottie` + `flutter_svg`, a dead `sparkleAnim` asset, an empty asset dir | removed (with the stale README lines) |
 | 2 unused imports + 15 files with unordered imports | removed / sorted (`directives_ordering`) |
+| The destructive dialog was **written** (up to 12 words) and a single static hold could be an accident | gate is now **textless** (icon-only cancel) and irreversibles ask for **two displaced holds** |
 
 A new `test/safety_test.dart` locks the promises that need no device: no
 ads/purchases/tracking/network packages, no URL or `HttpClient` anywhere in
@@ -110,10 +111,18 @@ ads/purchases/tracking/network packages, no URL or `HttpClient` anywhere in
 every screen keeps the shared Home+Mute skeleton, and destructive actions stay
 behind the parent gate.
 
-**Status: not release-ready.** 8 test files / 110 cases are written and the
+**Status: not release-ready.** 8 test files / 114 cases are written and the
 static review is clean, but `flutter pub get · analyze · test · run` have never
 been executed anywhere — see [docs/final-qa-report.md](docs/final-qa-report.md)
 and [docs/verification.md](docs/verification.md).
+
+Release verification is three commands on a machine with Flutter:
+
+```bash
+flutter doctor -v && bash tools/verify.sh   # 1. machine + project
+flutter run                                 # 2. the 30-point device checklist
+bash tools/verify.sh --apk                  # 3. the release APK
+```
 
 ### Motion (Phase 2.3)
 
